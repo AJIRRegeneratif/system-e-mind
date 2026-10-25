@@ -555,7 +555,7 @@
      inkscape:window-x="-9"
      inkscape:window-y="-9"
      inkscape:window-maximized="1"
-     inkscape:current-layer="svg4"
+     inkscape:current-layer="g3"
      inkscape:snap-bbox="true"
      inkscape:bbox-paths="true"
      inkscape:bbox-nodes="true"
@@ -796,9 +796,9 @@
        x="-0.82026392"
        y="-0.14327843" />
     <rect
-       style="fill:#999999;fill-opacity:1;stroke:none;stroke-width:4.89734"
+       style="fill:#999999;fill-opacity:1;stroke:none;stroke-width:4.86909"
        id="rect8"
-       width="1556.3837"
+       width="1538.4788"
        height="92.063461"
        x="14.124109"
        y="-140.15874"
@@ -1254,7 +1254,7 @@
     </g>
     <g
        id="g1"
-       transform="translate(818.31482,-468.25398)">
+       transform="translate(798.31482,-468.25398)">
       <rect
          style="fill:#f2f2f2;fill-opacity:1;stroke:none;stroke-width:5.13052"
          id="rect6"
@@ -1588,7 +1588,7 @@
     </g>
     <g
        id="g41"
-       transform="matrix(0.31640625,0,0,0.31640625,668.47785,168.05631)">
+       transform="matrix(0.23730469,0,0,0.23730469,683.63187,216.35225)">
       <path
          d="m -419.18026,382.76207 a 200.15874,201.22473 0 0 1 -202.61103,198.36729 200.15874,201.22473 0 0 1 -197.67528,-203.33813 200.15874,201.22473 0 0 1 201.91022,-199.08818 200.15874,201.22473 0 0 1 198.3911,202.63231 z"
          sodipodi:open="true"
