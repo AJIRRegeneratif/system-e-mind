@@ -1,5 +1,7 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,7 +39,7 @@
         }
 
         main {
-            padding: 40px 20px;
+            padding: 40px 20px 0;
         }
 
         .bouton {
@@ -56,7 +58,8 @@
 
         .zone-boutons {
             position: relative;
-            margin-top: 20px;
+            margin-top: 60px;
+            margin-bottom: 80px;
             min-height: 50px;
         }
 
@@ -72,9 +75,14 @@
         }
 
         footer {
-            margin-top: 40px;
+            margin-top: 60px;
             padding: 20px;
             color: #666;
+            line-height: 1.6;
+        }
+
+        footer p:first-child {
+            margin-bottom: 10px;
         }
 
         @media (max-width: 600px) {
@@ -98,6 +106,8 @@
                 flex-direction: column;
                 align-items: center;
                 gap: 12px;
+                margin-top: 60px;
+                margin-bottom: 50px;
             }
 
             .bouton-contact {
@@ -132,23 +142,23 @@
                 Consulter nos lettres d'information
             </a>
 
-            <a class="bouton bouton-contact" href="mailto:ajirrege@gmail.com">
+            <a class="bouton bouton-contact"
+               href="mailto:ajirrege@gmail.com">
                 Nous contacter
             </a>
-        </div>
-
-        <div class="texte-informatif">
-            <p>
-                AJIR Régénératif est une association loi 1901 qui s'emploie
-                à jeter les briques d'un futur meilleur !
-                N'hésitez pas à nous témoigner votre soutien...
-            </p>
         </div>
     </main>
 
     <footer>
+        <p>
+            AJIR Régénératif est une association loi 1901 qui s'emploie
+            à jeter les briques d'un futur meilleur !
+            N'hésitez pas à nous témoigner votre soutien...
+        </p>
+
         <p>© 2026 - AJIR Régénératif</p>
     </footer>
 
 </body>
 </html>
+```
