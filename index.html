@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 
@@ -27,14 +28,14 @@
 
         .logo {
             position: absolute;
-            top: 0;
-            bottom: 0;
+            top: 10px;
             left: 20px;
             width: 400px;
-            height: 200%;
+            height: calc(100% - 20px);
             max-width: none;
             object-fit: contain;
-            object-position: left high;
+            object-position: left top;
+            border: 0;
         }
 
         header h1,
@@ -101,7 +102,6 @@
                 height: 75px;
                 top: 8px;
                 left: 10px;
-                bottom: auto;
                 object-position: left top;
             }
 
@@ -134,12 +134,12 @@
 <body>
 
     <header>
-       <object
-    data="site.svg"
-    type="image/svg+xml"
-    class="logo"
-    aria-label="Logo AJIR Régénératif">
-       </object>
+        <object
+            data="site.svg"
+            type="image/svg+xml"
+            class="logo"
+            aria-label="Logo AJIR Régénératif">
+        </object>
 
         <h1>SYSTEM e-MIND !</h1>
         <p>La ligne éditoriale d'AJIR Régénératif.</p>
@@ -177,3 +177,4 @@
 
 </body>
 </html>
+```
