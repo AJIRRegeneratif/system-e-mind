@@ -20,6 +20,15 @@
             background: #999999;
             color: white;
             padding: 60px 20px;
+            position: relative;
+        }
+
+        .logo {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 120px;
+            height: auto;
         }
 
         h1 {
@@ -56,10 +65,42 @@
             top: 0;
         }
 
+        .texte-informatif {
+            margin-top: 40px;
+            line-height: 1.6;
+        }
+
         footer {
             margin-top: 40px;
             padding: 20px;
             color: #666;
+        }
+
+        @media (max-width: 600px) {
+            .logo {
+                width: 75px;
+                top: 10px;
+                left: 10px;
+            }
+
+            header {
+                padding: 90px 15px 35px;
+            }
+
+            h1 {
+                font-size: 30px;
+            }
+
+            .zone-boutons {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .bouton-contact {
+                position: static;
+            }
         }
     </style>
 </head>
@@ -67,21 +108,16 @@
 <body>
 
     <header>
+        <img src="site.svg"
+             alt="Logo AJIR Régénératif"
+             class="logo">
+
         <h1>SYSTEM e-MIND !</h1>
         <p>La ligne éditoriale d'AJIR Régénératif.</p>
     </header>
 
     <main>
-        <h2>
-            Bienvenue sur SYSTEM e-MIND.<br>
-            Retrouvez nos dernières lettres d'information et leurs articles complets.
-        </h2>
-
-        <p>
-            AJIR Régénératif est une association 1901 qui s'emploie à jeter
-            les briques d'un futur meilleur ! N'hésitez pas à nous témoigner
-            votre soutien...
-        </p>
+        <h2>Bienvenue sur SYSTEM e-MIND.</h2>
 
         <div class="zone-boutons">
             <a class="bouton" href="1126.svg">
@@ -91,6 +127,18 @@
             <a class="bouton bouton-contact" href="mailto:ajirrege@gmail.com">
                 Nous contacter
             </a>
+        </div>
+
+        <div class="texte-informatif">
+            <h2>
+                Retrouvez nos lettres d'information et leurs articles complets.
+            </h2>
+
+            <p>
+                AJIR Régénératif est une association loi 1901 qui s'emploie
+                à jeter les briques d'un futur meilleur !
+                N'hésitez pas à nous témoigner votre soutien...
+            </p>
         </div>
     </main>
 
