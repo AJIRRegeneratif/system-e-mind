@@ -27,7 +27,8 @@
             position: absolute;
             top: 20px;
             left: 20px;
-            width: 120px;
+            width: 280px;
+            max-width: 35%;
             height: auto;
         }
 
@@ -55,7 +56,7 @@
 
         .zone-boutons {
             position: relative;
-            margin-top: 30px;
+            margin-top: 20px;
             min-height: 50px;
         }
 
@@ -66,7 +67,7 @@
         }
 
         .texte-informatif {
-            margin-top: 40px;
+            margin-top: 25px;
             line-height: 1.6;
         }
 
@@ -78,7 +79,8 @@
 
         @media (max-width: 600px) {
             .logo {
-                width: 75px;
+                width: 100px;
+                max-width: 25%;
                 top: 10px;
                 left: 10px;
             }
@@ -108,7 +110,7 @@
 <body>
 
     <header>
-        <img src="site.svg"
+        <img src="logo-ajir.svg"
              alt="Logo AJIR Régénératif"
              class="logo">
 
@@ -118,6 +120,12 @@
 
     <main>
         <h2>Bienvenue sur SYSTEM e-MIND.</h2>
+
+        <div class="texte-informatif">
+            <h2>
+                Retrouvez nos lettres d'information et leurs articles complets.
+            </h2>
+        </div>
 
         <div class="zone-boutons">
             <a class="bouton" href="1126.svg">
@@ -130,10 +138,6 @@
         </div>
 
         <div class="texte-informatif">
-            <h2>
-                Retrouvez nos lettres d'information et leurs articles complets.
-            </h2>
-
             <p>
                 AJIR Régénératif est une association loi 1901 qui s'emploie
                 à jeter les briques d'un futur meilleur !
