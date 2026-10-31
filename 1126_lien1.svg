@@ -1479,15 +1479,16 @@
   }
 
   layout();
+ let lastLayoutWidth = document.documentElement.clientWidth;
 
-  // Ne relancer la mise en page que si la largeur change.
-  window.addEventListener(&quot;resize&quot;, function () {
-    const newLayoutWidth = document.documentElement.clientWidth;
+window.addEventListener("resize", function () {
+  const newLayoutWidth = document.documentElement.clientWidth;
 
-    if (newLayoutWidth !== lastLayoutWidth) {
-      lastLayoutWidth = newLayoutWidth;
-      layout();
-    }
-  });
+  if (newLayoutWidth !== lastLayoutWidth) {
+    lastLayoutWidth = newLayoutWidth;
+    layout();
+  }
+});
+})();
 })();</script>
 </svg>
