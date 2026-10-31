@@ -1767,8 +1767,7 @@
   function wrap(id, wrapperId) {
     const element = get(id);
 
-    if (element.parentNode &&
-        element.parentNode.id === wrapperId) {
+    if (element.parentNode && element.parentNode.id === wrapperId) {
       return {
         element: element,
         wrapper: element.parentNode
@@ -1777,7 +1776,6 @@
 
     const wrapper = document.createElementNS(NS, "g");
     wrapper.setAttribute("id", wrapperId);
-
     element.parentNode.insertBefore(wrapper, element);
     wrapper.appendChild(element);
 
@@ -1787,12 +1785,7 @@
     };
   }
 
-  /*
-   * Crée les enveloppes de positionnement.
-   * Les éléments d'origine restent intacts à l'intérieur.
-   */
-
-  const articles = ARTICLE_IDS.map(function (id, index) {
+  const articles = ARTICLE_IDS.map(function (id) {
     return wrap(id, "responsive-" + id);
   });
 
@@ -1812,29 +1805,13 @@
   const copyrightText =
     wrap("text38", "responsive-copyright-text");
 
-  /*
-   * Mémorisation de l'état initial du SVG.
-   */
-
-  const originalRoot = {
+  const original = {
     viewBox: svg.getAttribute("viewBox"),
     width: svg.getAttribute("width"),
     height: svg.getAttribute("height"),
-    preserveAspectRatio: svg.getAttribute("preserveAspectRatio"),
+    preserve: svg.getAttribute("preserveAspectRatio"),
     style: svg.getAttribute("style")
   };
-
-  const textEntries = [
-    { item: title1, ratio: 1.25, x: 95, y: 25 },
-    { item: title2, ratio: 1.10, x: 230, y: 25 },
-    { item: subtitle1, ratio: 0.75, x: 95, y: 75 },
-    { item: subtitle2, ratio: 0.90, x: 230, y: 75 },
-    { item: copyrightText, ratio: 0.80, x: 20, y: 2210 }
-  ];
-
-  const originalTextStyles = textEntries.map(function (entry) {
-    return entry.item.element.getAttribute("style");
-  });
 
   const reference = get("text41");
   const referenceSize = parseFloat(
@@ -1842,134 +1819,115 @@
   );
 
   if (!Number.isFinite(referenceSize) || referenceSize <= 0) {
-    throw new Error("La taille de référence de text41 est invalide.");
+    throw new Error("Taille de référence text41 invalide");
   }
 
+  const textEntries = [
+    { item: title1, ratio: 1.25, x: 95, y: 22 },
+    { item: title2, ratio: 1.10, x: 230, y: 22 },
+    { item: subtitle1, ratio: 0.75, x: 95, y: 66 },
+    { item: subtitle2, ratio: 0.90, x: 230, y: 66 },
+    { item: copyrightText, ratio: 0.80, x: 20, y: 2210 }
+  ];
+
+  const originalStyles = textEntries.map(function (entry) {
+    return entry.item.element.getAttribute("style");
+  });
+
   /*
-   * Mesure d'un élément dans le repère de son parent,
-   * en neutralisant temporairement le déplacement du wrapper.
+   * Mesure des éléments en tenant compte
+   * de leur propre attribut transform.
    */
 
-  function rootBox(item) {
+  function box(item) {
     const element = item.element;
-    const wrapper = item.wrapper;
+    const b = element.getBBox();
 
-    const previousTransform = wrapper.getAttribute("transform");
-    wrapper.removeAttribute("transform");
+    const consolidated = element.transform.baseVal.consolidate();
+    const m = consolidated ? consolidated.matrix : null;
 
-    try {
-      const box = element.getBBox();
-      const elementMatrix = element.getCTM();
-      const parentMatrix = wrapper.parentNode.getCTM();
-
-      if (!elementMatrix || !parentMatrix) {
-        throw new Error(
-          "Impossible de mesurer l'élément : " + element.id
-        );
-      }
-
-      const matrix = parentMatrix.inverse().multiply(elementMatrix);
-
-      const corners = [
-        [box.x, box.y],
-        [box.x + box.width, box.y],
-        [box.x, box.y + box.height],
-        [box.x + box.width, box.y + box.height]
-      ].map(function (point) {
-        return {
-          x: matrix.a * point[0] +
-             matrix.c * point[1] +
-             matrix.e,
-          y: matrix.b * point[0] +
-             matrix.d * point[1] +
-             matrix.f
-        };
-      });
-
-      const xs = corners.map(function (point) {
-        return point.x;
-      });
-
-      const ys = corners.map(function (point) {
-        return point.y;
-      });
-
-      const minX = Math.min.apply(null, xs);
-      const minY = Math.min.apply(null, ys);
-      const maxX = Math.max.apply(null, xs);
-      const maxY = Math.max.apply(null, ys);
-
+    if (!m) {
       return {
-        x: minX,
-        y: minY,
-        width: maxX - minX,
-        height: maxY - minY
+        x: b.x,
+        y: b.y,
+        width: b.width,
+        height: b.height
       };
-
-    } finally {
-      if (previousTransform !== null) {
-        wrapper.setAttribute("transform", previousTransform);
-      }
     }
+
+    const points = [
+      [b.x, b.y],
+      [b.x + b.width, b.y],
+      [b.x, b.y + b.height],
+      [b.x + b.width, b.y + b.height]
+    ].map(function (p) {
+      return {
+        x: m.a * p[0] + m.c * p[1] + m.e,
+        y: m.b * p[0] + m.d * p[1] + m.f
+      };
+    });
+
+    const xs = points.map(function (p) {
+      return p.x;
+    });
+
+    const ys = points.map(function (p) {
+      return p.y;
+    });
+
+    const minX = Math.min.apply(null, xs);
+    const maxX = Math.max.apply(null, xs);
+    const minY = Math.min.apply(null, ys);
+    const maxY = Math.max.apply(null, ys);
+
+    return {
+      x: minX,
+      y: minY,
+      width: maxX - minX,
+      height: maxY - minY
+    };
   }
 
-  /*
-   * Positionnement sans déformation.
-   */
-
-  function translateTo(item, x, y) {
-    const box = rootBox(item);
+  function move(item, x, y) {
+    const b = box(item);
 
     item.wrapper.setAttribute(
       "transform",
       "translate(" +
-        (x - box.x) + " " +
-        (y - box.y) +
+        (x - b.x) + " " +
+        (y - b.y) +
       ")"
     );
   }
 
-  /*
-   * Mise à l'échelle d'un élément vers une boîte cible.
-   */
+  function fit(item, x, y, width, height) {
+    const b = box(item);
 
-  function scaleTo(item, x, y, width, height) {
-    const box = rootBox(item);
-
-    if (box.width <= 0 || box.height <= 0) {
+    if (b.width <= 0 || b.height <= 0) {
       return;
     }
 
-    const sx = width / box.width;
-    const sy = height / box.height;
+    const sx = width / b.width;
+    const sy = height / b.height;
 
     item.wrapper.setAttribute(
       "transform",
       "matrix(" +
         sx + " 0 0 " + sy + " " +
-        (x - sx * box.x) + " " +
-        (y - sy * box.y) +
+        (x - sx * b.x) + " " +
+        (y - sy * b.y) +
       ")"
     );
   }
-
-  /*
-   * Positionnement des textes et application
-   * de leurs tailles relatives à text41.
-   */
 
   function setText(entry) {
     entry.item.element.style.fontSize =
       (referenceSize * entry.ratio) + "px";
 
-    translateTo(entry.item, entry.x, entry.y);
+    move(entry.item, entry.x, entry.y);
   }
 
-  /*
-   * Restauration exacte des attributs d'origine.
-   */
-
-  function restoreAttribute(element, name, value) {
+  function restoreAttr(element, name, value) {
     if (value === null) {
       element.removeAttribute(name);
     } else {
@@ -1978,22 +1936,23 @@
   }
 
   /*
-   * AFFICHAGE ORDINATEUR
-   * Les quatre articles retrouvent leur disposition initiale.
+   * VERSION ORDINATEUR
    */
 
   function desktopLayout() {
-    restoreAttribute(svg, "viewBox", originalRoot.viewBox);
-    restoreAttribute(svg, "width", originalRoot.width);
-    restoreAttribute(svg, "height", originalRoot.height);
-    restoreAttribute(
+    restoreAttr(svg, "viewBox", original.viewBox);
+    restoreAttr(svg, "width", original.width);
+    restoreAttr(svg, "height", original.height);
+
+    restoreAttr(
       svg,
       "preserveAspectRatio",
-      originalRoot.preserveAspectRatio
+      original.preserve
     );
-    restoreAttribute(svg, "style", originalRoot.style);
 
-    const allItems = articles.concat([
+    restoreAttr(svg, "style", original.style);
+
+    articles.concat([
       banner,
       logo,
       title1,
@@ -2003,23 +1962,21 @@
       home,
       copyrightBackground,
       copyrightText
-    ]);
-
-    allItems.forEach(function (item) {
+    ]).forEach(function (item) {
       item.wrapper.removeAttribute("transform");
     });
 
     textEntries.forEach(function (entry, index) {
-      restoreAttribute(
+      restoreAttr(
         entry.item.element,
         "style",
-        originalTextStyles[index]
+        originalStyles[index]
       );
     });
   }
 
   /*
-   * AFFICHAGE MOBILE
+   * VERSION MOBILE
    */
 
   function mobileLayout() {
@@ -2027,6 +1984,9 @@
       "viewBox",
       "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT
     );
+
+    svg.setAttribute("width", String(MOBILE_WIDTH));
+    svg.setAttribute("height", String(PAGE_HEIGHT));
 
     svg.setAttribute(
       "preserveAspectRatio",
@@ -2039,45 +1999,51 @@
     svg.style.maxWidth = "100%";
 
     /*
-     * 1. Les quatre articles sont empilés verticalement.
+     * 1. Empilement des quatre articles.
      */
 
     articles.forEach(function (item, index) {
-      translateTo(
-        item,
-        14.113,
-        ARTICLE_TOP +
-          index * (ARTICLE_HEIGHT + ARTICLE_GAP)
+      item.wrapper.setAttribute(
+        "transform",
+        "translate(" +
+          (14.113 - ARTICLE_X[index]) + " " +
+          (
+            ARTICLE_TOP +
+            index * (ARTICLE_HEIGHT + ARTICLE_GAP) -
+            ARTICLE_Y[index]
+          ) +
+        ")"
       );
     });
 
     /*
-     * 2. Le fond du bandeau est adapté à la largeur mobile.
+     * 2. Fond du bandeau.
+     * Largeur adaptée à l'écran, hauteur conservée.
      */
 
-    const bannerBox = rootBox(banner);
+    const bannerBox = box(banner);
 
-    scaleTo(
+    fit(
       banner,
       14,
       8,
       348,
-      Math.max(1, bannerBox.height * 1.15)
+      bannerBox.height
     );
 
     /*
-     * 3. Le logo est réduit proportionnellement.
+     * 3. Logo réduit proportionnellement.
      */
 
-    const logoBox = rootBox(logo);
+    const logoBox = box(logo);
 
     const logoScale = Math.min(
       0.72,
       62 / logoBox.width,
-      82 / logoBox.height
+      70 / logoBox.height
     );
 
-    scaleTo(
+    fit(
       logo,
       16,
       18,
@@ -2086,44 +2052,40 @@
     );
 
     /*
-     * 4. Les quatre textes du bandeau sont repositionnés.
-     * Leurs tailles respectent les proportions demandées
-     * par rapport à text41.
+     * 4. Textes du bandeau.
      */
 
     textEntries.slice(0, 4).forEach(setText);
 
     /*
-     * 5. Le lien d'accueil est placé sous les articles,
-     * à droite.
+     * 5. Lien d'accueil en bas à droite.
      */
 
-    translateTo(home, 330, 2140);
+    move(home, 330, 2140);
 
     /*
-     * 6. Le fond du copyright est adapté à la largeur mobile.
+     * 6. Fond du copyright.
      */
 
-    const copyrightBox = rootBox(copyrightBackground);
+    const copyrightBox = box(copyrightBackground);
 
-    scaleTo(
+    fit(
       copyrightBackground,
       14,
       2195,
       348,
-      Math.max(16, copyrightBox.height * 1.15)
+      copyrightBox.height
     );
 
     /*
-     * 7. Le texte du copyright est repositionné
-     * et conserve sa taille relative demandée.
+     * 7. Texte du copyright.
      */
 
     setText(textEntries[4]);
   }
 
   /*
-   * Choix automatique de la disposition selon la largeur.
+   * Adaptation automatique à la largeur.
    */
 
   function layout() {
@@ -2134,16 +2096,11 @@
     }
   }
 
-  /*
-   * Application initiale et actualisation lors
-   * d'un changement de largeur ou d'orientation.
-   */
-
   layout();
 
-  if (typeof mobileQuery.addEventListener === "function") {
+  if (mobileQuery.addEventListener) {
     mobileQuery.addEventListener("change", layout);
-  } else if (typeof mobileQuery.addListener === "function") {
+  } else if (mobileQuery.addListener) {
     mobileQuery.addListener(layout);
   }
 
