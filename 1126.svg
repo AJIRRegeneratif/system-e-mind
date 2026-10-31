@@ -1739,233 +1739,272 @@
          id="tspan393">© Copyright AJIR Régénératif - Tous droits réservés - Reproduction interdite</tspan></tspan></text>
  <script type="application/ecmascript"><![CDATA[
 (function () {
+  "use strict";
+
+  const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
 
-  // Récupération de la véritable racine SVG,
-  // que le SVG soit autonome ou intégré dans une page HTML.
-  const svg =
-    (document.currentScript && document.currentScript.ownerSVGElement) ||
-    document.getElementById("svg4") ||
-    document.documentElement;
+  const articles = [
+    { id: "g2", x: 14.113, y: 148.873 },
+    { id: "g3", x: 380.921, y: 148.873 },
+    { id: "g4", x: 744.839, y: 148.063 },
+    { id: "g6", x: 1105.648, y: 148.063 }
+  ];
 
-  const mobileQuery = window.matchMedia("(max-width: 600px)");
+  const original = {
+    width: "1590",
+    height: "725",
+    viewBox: "0 0 1590 725"
+  };
 
-  const articleIds = ["g2", "g3", "g4", "g6"];
-  const articleX = [14.113, 380.921, 744.839, 1105.648];
-  const articleY = [148.873, 148.873, 148.063, 148.063];
+  /*
+   * Crée une enveloppe autour d'un élément SVG.
+   * Cette enveloppe permet de déplacer l'élément
+   * sans modifier ses coordonnées internes.
+   */
+  function wrap(id, wrapperId) {
+    const element = document.getElementById(id);
+    if (!element) return null;
 
-  const mobileWidth = 376;
-  const articleTop = 150;
-  const articleHeight = 453.190;
-  const articleGap = 24;
-  const pageHeight = 2250;
+    let wrapper = document.getElementById(wrapperId);
+    if (wrapper) return wrapper;
 
-  function makeWrapper(id, wrapperId) {
-    const element = svg.ownerDocument.getElementById(id);
-    if (!element) throw new Error("Élément absent : " + id);
-
-    if (element.parentElement.id === wrapperId) {
-      return { element, wrapper: element.parentElement };
-    }
-
-    const wrapper = document.createElementNS(NS, "g");
+    wrapper = document.createElementNS(NS, "g");
     wrapper.setAttribute("id", wrapperId);
+
     element.parentNode.insertBefore(wrapper, element);
     wrapper.appendChild(element);
 
-    return { element, wrapper };
+    return wrapper;
   }
 
-  // Les quatre articles
-  const articles = articleIds.map((id, i) =>
-    makeWrapper(id, "responsive-" + id)
+  const wrappers = {};
+
+  // Enveloppes des quatre articles
+  articles.forEach((article, index) => {
+    wrappers[article.id] = wrap(
+      article.id,
+      "mobile-wrapper-article-" + index
+    );
+  });
+
+  // Enveloppes des autres éléments
+  wrappers.logo = wrap("a1", "mobile-wrapper-logo");
+  wrappers.title = wrap("g7", "mobile-wrapper-title");
+  wrappers.subtitle = wrap("g8", "mobile-wrapper-subtitle");
+  wrappers.home = wrap("a5", "mobile-wrapper-home");
+
+  // Enveloppes des deux rectangles
+  wrappers.banner = wrap("rect8", "mobile-wrapper-banner");
+  wrappers.copyrightRect = wrap(
+    "rect38",
+    "mobile-wrapper-copyright-rect"
   );
 
-  // Les deux fonds
-  const bannerBackground =
-    makeWrapper("g1", "responsive-banner-background");
-
-  const copyrightBackground =
-    makeWrapper("g9", "responsive-copyright-background");
-
-  // Les autres éléments
-  const logo = makeWrapper("a1", "responsive-logo");
-  const title1 = makeWrapper("text11", "responsive-text11");
-  const subtitle1 = makeWrapper("text21", "responsive-text21");
-  const title2 = makeWrapper("text15", "responsive-text15");
-  const subtitle2 = makeWrapper("text16", "responsive-text16");
-  const home = makeWrapper("a5", "responsive-home");
-  const copyrightText =
-    makeWrapper("text38", "responsive-copyright-text");
-
-  const reference = svg.ownerDocument.getElementById("text41");
-  if (!reference) throw new Error("text41 introuvable");
-
-  const referenceSize = parseFloat(
-    reference.getAttribute("font-size") ||
-    getComputedStyle(reference).fontSize
+  // Enveloppe du texte de copyright
+  wrappers.copyrightText = wrap(
+    "text38",
+    "mobile-wrapper-copyright-text"
   );
 
-  const textItems = [
-    { item: title1, ratio: 1.25, x: 95, y: 48 },
-    { item: title2, ratio: 1.10, x: 230, y: 48 },
-    { item: subtitle1, ratio: 0.75, x: 95, y: 92 },
-    { item: subtitle2, ratio: 0.90, x: 230, y: 92 },
-    { item: copyrightText, ratio: 0.80, x: 20, y: 2200 }
-  ];
+  const banner = document.getElementById("rect8");
+  const copyrightRect = document.getElementById("rect38");
 
-  const originalFontSizes = textItems.map(item =>
-    item.item.element.getAttribute("style")
-  );
+  /*
+   * Déplacement d'une enveloppe.
+   * Les coordonnées correspondent à la translation
+   * appliquée à l'élément dans le SVG.
+   */
+  function move(wrapper, x, y, scale) {
+    if (!wrapper) return;
 
-  function setText(entry) {
-    const element = entry.item.element;
-    const wrapper = entry.item.wrapper;
-
-    element.style.fontSize =
-      (referenceSize * entry.ratio) + "px";
-
-    const box = element.getBBox();
+    scale = scale || 1;
 
     wrapper.setAttribute(
       "transform",
-      "translate(" + (entry.x - box.x) + " " +
-      (entry.y - box.y) + ")"
+      "translate(" + x + " " + y + ") scale(" + scale + ")"
     );
   }
 
-  // Redimensionnement horizontal d'un fond.
-  // La hauteur d'origine est conservée.
-  function resizeBackground(item, originalX, originalY,
-                            originalWidth, targetY) {
-    const targetWidth = 348;
-    const scaleX = targetWidth / originalWidth;
-
-    const translateX = 14 - scaleX * originalX;
-    const translateY = targetY - originalY;
-
-    item.wrapper.setAttribute(
-      "transform",
-      "matrix(" + scaleX + " 0 0 1 " +
-      translateX + " " + translateY + ")"
-    );
+  function resetWrappers() {
+    Object.values(wrappers).forEach(wrapper => {
+      if (wrapper) {
+        wrapper.removeAttribute("transform");
+      }
+    });
   }
 
   function layout() {
-    if (!mobileQuery.matches) {
-      // Retour à la présentation ordinateur
-      svg.setAttribute("viewBox", "0 0 1590 725");
-      svg.setAttribute("width", "1590");
-      svg.setAttribute("height", "725");
+    const isMobile = window.matchMedia(
+      "(max-width: 600px)"
+    ).matches;
+
+    /*
+     * VERSION ORDINATEUR
+     */
+    if (!isMobile) {
+      svg.setAttribute("width", original.width);
+      svg.setAttribute("height", original.height);
+      svg.setAttribute("viewBox", original.viewBox);
+
       svg.style.width = "";
       svg.style.height = "";
       svg.style.display = "";
 
-      articles.forEach(item =>
-        item.wrapper.removeAttribute("transform")
-      );
+      resetWrappers();
 
-      [
-        bannerBackground,
-        copyrightBackground,
-        logo,
-        title1,
-        subtitle1,
-        title2,
-        subtitle2,
-        home,
-        copyrightText
-      ].forEach(item =>
-        item.wrapper.removeAttribute("transform")
-      );
+      if (banner) {
+        banner.setAttribute("x", "14.124");
+        banner.setAttribute("y", "-140.158");
+        banner.setAttribute("width", "1439.238");
+        banner.setAttribute("height", "92.063");
+      }
 
-      textItems.forEach((entry, i) => {
-        if (originalFontSizes[i] === null) {
-          entry.item.element.removeAttribute("style");
-        } else {
-          entry.item.element.setAttribute(
-            "style",
-            originalFontSizes[i]
-          );
-        }
-      });
+      if (copyrightRect) {
+        copyrightRect.setAttribute("x", "466.80795");
+        copyrightRect.setAttribute("y", "-635.36621");
+        copyrightRect.setAttribute("width", "548.28284");
+        copyrightRect.setAttribute("height", "19.127499");
+      }
 
+      svg.removeAttribute("preserveAspectRatio");
       return;
     }
 
-    // Dimensions mobiles
+    /*
+     * VERSION MOBILE
+     */
+    const MOBILE_WIDTH = 376;
+    const PAGE_HEIGHT = 2160;
+    const MOBILE_CONTENT_WIDTH = 347.75;
+
     svg.setAttribute(
       "viewBox",
-      "0 0 " + mobileWidth + " " + pageHeight
+      "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT
     );
-    svg.setAttribute("width", "376");
-    svg.setAttribute("height", String(pageHeight));
-    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
 
-    svg.style.width = "100%";
+    svg.setAttribute(
+      "preserveAspectRatio",
+      "xMinYMin meet"
+    );
+
+    svg.style.width = "100vw";
     svg.style.height = "auto";
     svg.style.display = "block";
 
-    // 1. Empilement des quatre articles
-    articles.forEach((item, i) => {
-      item.wrapper.setAttribute(
-        "transform",
-        "translate(" + (14.113 - articleX[i]) + " " +
-        (articleTop + i * (articleHeight + articleGap) -
-        articleY[i]) + ")"
+    /*
+     * BANDEAU RECTANGLE
+     *
+     * Le rectangle conserve son retournement vertical
+     * d'origine (scale(1,-1)).
+     *
+     * Sa position horizontale est ramenée à x = 14.
+     */
+    if (banner) {
+      banner.setAttribute("x", "14.124");
+      banner.setAttribute("y", "-48.095");
+      banner.setAttribute("width", MOBILE_CONTENT_WIDTH);
+      banner.setAttribute("height", "125");
+    }
+
+    move(
+      wrappers.banner,
+      14 - 14.124,
+      0,
+      1
+    );
+
+    /*
+     * LOGO DU BANDEAU
+     */
+    move(
+      wrappers.logo,
+      -18.37,
+      -2.58,
+      1
+    );
+
+    /*
+     * TITRE PRINCIPAL
+     */
+    move(
+      wrappers.title,
+      120 - 197.756 * 0.55,
+      60 - 71.160 * 0.55,
+      0.55
+    );
+
+    /*
+     * TEXTE SECONDAIRE DU BANDEAU
+     */
+    move(
+      wrappers.subtitle,
+      120 - 993.479 * 0.65,
+      105 - 74.376 * 0.65,
+      0.65
+    );
+
+    /*
+     * ARTICLES
+     *
+     * Même logique que dans le script de référence :
+     * chaque article commence à x = 14.
+     */
+    const articleStart = 190;
+    const articleStep = 468;
+
+    articles.forEach((article, index) => {
+      move(
+        wrappers[article.id],
+        14 - article.x,
+        articleStart + index * articleStep - article.y,
+        1
       );
     });
 
-    // 2. Fond du bandeau
-    // x = 14.124 ; y visible = 48.095
-    // largeur initiale = 1439.238
-    resizeBackground(
-      bannerBackground,
-      14.124,
-      48.095,
-      1439.238,
-      48.095
+    /*
+     * LIEN HOME
+     */
+    move(
+      wrappers.home,
+      330 - 1394.680,
+      2060 - 84.199,
+      1
     );
 
-    // 3. Logo
-    logo.wrapper.setAttribute(
-      "transform",
-      "translate(-25 -43) scale(0.70)"
+    /*
+     * RECTANGLE DE COPYRIGHT
+     *
+     * Son bord gauche est ramené à x = 14.
+     * Le rectangle conserve son retournement vertical
+     * d'origine (scale(1,-1)).
+     */
+    if (copyrightRect) {
+      copyrightRect.setAttribute("x", "466.80795");
+      copyrightRect.setAttribute("y", "-2110");
+      copyrightRect.setAttribute("width", MOBILE_CONTENT_WIDTH);
+      copyrightRect.setAttribute("height", "19.127499");
+    }
+
+    move(
+      wrappers.copyrightRect,
+      14 - 466.80795,
+      0,
+      1
     );
 
-    // 4. Textes du bandeau et copyright
-    textItems.forEach(setText);
-
-    // 5. Lien d'accueil
-    const homeBox = home.element.getBBox();
-
-    home.wrapper.setAttribute(
-      "transform",
-      "translate(" + (330 - homeBox.x) + " " +
-      (2150 - homeBox.y) + ")"
-    );
-
-    // 6. Fond du copyright
-    // x = 466.80795 ; y visible = 635.36621
-    // largeur initiale = 548.28284
-    resizeBackground(
-      copyrightBackground,
-      466.80795,
-      635.36621,
-      548.28284,
-      2195
+    /*
+     * TEXTE DE COPYRIGHT
+     */
+    move(
+      wrappers.copyrightText,
+      20 - 568.279 * 0.95,
+      2115 - 621.613 * 0.95,
+      0.95
     );
   }
 
-  // Application initiale
   layout();
-
-  // Actualisation lors d'un changement de largeur
-  if (mobileQuery.addEventListener) {
-    mobileQuery.addEventListener("change", layout);
-  } else {
-    mobileQuery.addListener(layout);
-  }
 
   window.addEventListener("resize", layout);
 
