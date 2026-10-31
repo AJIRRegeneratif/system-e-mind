@@ -1737,7 +1737,7 @@
        id="tspan394"><tspan
          style="font-weight:300;font-family:'Leelawadee UI';-inkscape-font-specification:'Leelawadee UI Light'"
          id="tspan393">© Copyright AJIR Régénératif - Tous droits réservés - Reproduction interdite</tspan></tspan></text>
- <script type="application/ecmascript"><![CDATA[
+<script>
 (function () {
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
@@ -1824,8 +1824,23 @@
     element.setAttribute("height", values.height);
   }
 
+  // Mémorisation du mode d'affichage
+  let currentMode = null;
+  let currentWidth = window.innerWidth;
+
+  function getStableMobileMode() {
+    const newWidth = window.innerWidth;
+
+    if (currentMode === null || newWidth !== currentWidth) {
+      currentWidth = newWidth;
+      currentMode = window.matchMedia("(max-width: 600px)").matches;
+    }
+
+    return currentMode;
+  }
+
   function layout() {
-    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+    const isMobile = getStableMobileMode();
 
     if (!isMobile) {
       svg.setAttribute("width", original.width);
@@ -1858,12 +1873,14 @@
 
     // Logo et textes du bandeau
     move(wrappers.logo, -18.37, -2.58, 1);
+
     move(
       wrappers.title,
       120 - 197.756 * 0.55,
       60 - 71.160 * 0.55,
       0.55
     );
+
     move(
       wrappers.subtitle,
       120 - 993.479 * 0.65,
@@ -1871,7 +1888,7 @@
       0.65
     );
 
-    // Rectangle du bandeau : dimensions mobiles
+    // Rectangle du bandeau
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "-173.095");
@@ -1879,7 +1896,6 @@
       banner.setAttribute("height", "125");
     }
 
-    // Déplacement du rectangle du bandeau par son groupe enveloppe
     move(
       wrappers.bannerRect,
       14 - 14.124,
@@ -1887,7 +1903,7 @@
       1
     );
 
-    // Empilement des articles : logique conservée à l'identique
+    // Empilement des articles : conservé à l'identique
     const articleStart = 190;
     const articleStep = 468;
 
@@ -1908,7 +1924,7 @@
       1
     );
 
-    // Rectangle copyright : dimensions mobiles
+    // Rectangle copyright
     if (copyrightRect) {
       copyrightRect.setAttribute("x", "14");
       copyrightRect.setAttribute("y", "-2129.127");
@@ -1916,7 +1932,6 @@
       copyrightRect.setAttribute("height", "19.127");
     }
 
-    // Déplacement du rectangle copyright par son groupe enveloppe
     move(
       wrappers.copyrightRect,
       14 - 14,
@@ -1936,5 +1951,5 @@
   layout();
   window.addEventListener("resize", layout);
 })();
-]]></script>
+</script>
 </svg>
