@@ -1335,159 +1335,350 @@
   </a>
   <script
      id="script1">(function () {
+  "use strict";
+
   const svg = document.documentElement;
-  const NS = &quot;http://www.w3.org/2000/svg&quot;;
+  const NS = "http://www.w3.org/2000/svg";
+  const mobileQuery = window.matchMedia("(max-width: 600px)");
+
+  const MOBILE_WIDTH = 376;
+  const PAGE_HEIGHT = 1000;
+  const ARTICLE_X = 14;
+  const ARTICLE_Y = 150;
+  const ARTICLE_WIDTH = 348;
+  const TEXT_WIDTH = 338;
+  const TEXT_X = 5;
+  const FONT_SIZE = 13.3333;
+  const LINE_HEIGHT = 16.6666;
 
   const original = {
-    width: &quot;1590&quot;,
-    height: &quot;725&quot;,
-    viewBox: &quot;0 0 1590 725&quot;
+    viewBox: svg.getAttribute("viewBox"),
+    width: svg.getAttribute("width"),
+    height: svg.getAttribute("height"),
+    preserveAspectRatio: svg.getAttribute("preserveAspectRatio"),
+    style: svg.getAttribute("style")
   };
 
-  const originalBanner = {
-    x: &quot;3.0911472&quot;,
-    y: &quot;-91.298477&quot;,
-    width: &quot;1439.238&quot;,
-    height: &quot;92.063461&quot;
-  };
-
-  function wrap(id, wrapperId) {
-    const element = document.getElementById(id);
-    if (!element) return null;
-
-    let wrapper = document.getElementById(wrapperId);
-    if (wrapper) return wrapper;
-
-    wrapper = document.createElementNS(NS, &quot;g&quot;);
-    wrapper.setAttribute(&quot;id&quot;, wrapperId);
-
-    element.parentNode.insertBefore(wrapper, element);
-    wrapper.appendChild(element);
-
-    return wrapper;
+  function get(id) {
+    const el = document.getElementById(id);
+    if (!el) throw new Error("Élément introuvable : " + id);
+    return el;
   }
 
-  const wrappers = {};
+  function saveAttrs(el, names) {
+    const result = {};
+    names.forEach(name => result[name] = el.getAttribute(name));
+    return result;
+  }
 
-  wrappers.content = wrap(&quot;g1&quot;, &quot;mobile-wrapper-content&quot;);
-  wrappers.logoText = wrap(&quot;g2&quot;, &quot;mobile-wrapper-logo-text&quot;);
-  wrappers.bannerText = wrap(&quot;g3&quot;, &quot;mobile-wrapper-banner-text&quot;);
-  wrappers.logoGraphic = wrap(&quot;g41&quot;, &quot;mobile-wrapper-logo-graphic&quot;);
-  wrappers.home = wrap(&quot;a1&quot;, &quot;mobile-wrapper-home&quot;);
-  wrappers.bannerRect = wrap(&quot;rect8&quot;, &quot;mobile-wrapper-banner-rect&quot;);
+  function restoreAttrs(el, saved) {
+    Object.keys(saved).forEach(name => {
+      if (saved[name] === null) el.removeAttribute(name);
+      else el.setAttribute(name, saved[name]);
+    });
+  }
 
-  const banner = document.getElementById(&quot;rect8&quot;);
+  function wrap(el, id) {
+    if (el.parentNode.id === id) {
+      return { element: el, wrapper: el.parentNode };
+    }
 
-  function move(wrapper, x, y, scale) {
-    if (!wrapper) return;
+    const parent = el.parentNode;
+    const wrapper = document.createElementNS(NS, "g");
+    wrapper.setAttribute("id", id);
+    parent.insertBefore(wrapper, el);
+    wrapper.appendChild(el);
 
-    scale = scale || 1;
+    return { element: el, wrapper: wrapper };
+  }
 
-    wrapper.setAttribute(
-      &quot;transform&quot;,
-      &quot;translate(&quot; + x + &quot; &quot; + y + &quot;) scale(&quot; + scale + &quot;)&quot;
+  function boxInParent(el) {
+    const b = el.getBBox();
+    const m = el.getCTM();
+    const p = el.parentNode.getCTM();
+
+    if (!m || !p) throw new Error("Mesure SVG impossible : " + el.id);
+
+    const matrix = p.inverse().multiply(m);
+    const pts = [
+      [b.x, b.y],
+      [b.x + b.width, b.y],
+      [b.x, b.y + b.height],
+      [b.x + b.width, b.y + b.height]
+    ].map(([x, y]) => ({
+      x: matrix.a * x + matrix.c * y + matrix.e,
+      y: matrix.b * x + matrix.d * y + matrix.f
+    }));
+
+    const xs = pts.map(p => p.x);
+    const ys = pts.map(p => p.y);
+
+    return {
+      x: Math.min(...xs),
+      y: Math.min(...ys),
+      width: Math.max(...xs) - Math.min(...xs),
+      height: Math.max(...ys) - Math.min(...ys)
+    };
+  }
+
+  function moveTo(item, x, y) {
+    const b = boxInParent(item.element);
+    item.wrapper.setAttribute(
+      "transform",
+      "translate(" + (x - b.x) + " " + (y - b.y) + ")"
     );
   }
 
-  function restoreRectangle(element, values) {
-    if (!element) return;
+  function scaleTo(item, x, y, width, height) {
+    const b = boxInParent(item.element);
+    if (!b.width || !b.height) return;
 
-    element.setAttribute(&quot;x&quot;, values.x);
-    element.setAttribute(&quot;y&quot;, values.y);
-    element.setAttribute(&quot;width&quot;, values.width);
-    element.setAttribute(&quot;height&quot;, values.height);
+    const sx = width / b.width;
+    const sy = height / b.height;
+
+    item.wrapper.setAttribute(
+      "transform",
+      "matrix(" + sx + " 0 0 " + sy + " " +
+      (x - sx * b.x) + " " + (y - sy * b.y) + ")"
+    );
   }
 
-  // Important : ignorer les événements resize qui ne changent
-  // que la hauteur de la fenêtre.
-  let lastLayoutWidth = document.documentElement.clientWidth;
+  const article = wrap(get("g1"), "responsive-article");
+  const banner = wrap(get("rect8"), "responsive-banner");
+  const bannerText1 = wrap(get("g2"), "responsive-banner-text-1");
+  const bannerText2 = wrap(get("g3"), "responsive-banner-text-2");
+  const logo = wrap(get("g41"), "responsive-logo");
+  const home = wrap(get("a1"), "responsive-home");
+
+  const rect4 = get("rect4");
+  const textTitle = get("text39");
+  const textBody = get("text41");
+  const textSource = get("text43");
+  const copyright = get("text38");
+  const textArea = get("rect41");
+
+  const originalRect4 = saveAttrs(rect4, [
+    "x", "y", "width", "height"
+  ]);
+
+  const originalTextArea = saveAttrs(textArea, [
+    "x", "y", "width", "height"
+  ]);
+
+  const textElements = [textTitle, textBody, textSource, copyright];
+
+  const originalText = textElements.map(el => ({
+    transform: el.getAttribute("transform"),
+    style: el.getAttribute("style"),
+    children: Array.from(el.childNodes).map(node => node.cloneNode(true))
+  }));
+
+  const originalTransforms = [
+    article, banner, bannerText1, bannerText2, logo, home
+  ].map(item => item.wrapper.getAttribute("transform"));
+
+  /*
+   * Recomposition du texte de l'article.
+   * Les paragraphes vides sont conservés.
+   */
+  const originalBodyNodes = Array.from(textBody.childNodes)
+    .map(node => node.cloneNode(true));
+
+  function getBodyParagraphs() {
+    const lines = originalBodyNodes
+      .filter(node => node.nodeType === Node.ELEMENT_NODE)
+      .map(node => node.textContent || "");
+
+    const paragraphs = [];
+    let current = "";
+
+    lines.forEach(line => {
+      const value = line.replace(/\s+/g, " ").trim();
+
+      if (!value) {
+        if (current.trim()) {
+          paragraphs.push(current.trim());
+          current = "";
+        }
+      } else {
+        current += (current ? " " : "") + value;
+      }
+    });
+
+    if (current.trim()) paragraphs.push(current.trim());
+    return paragraphs;
+  }
+
+  function measureText(text, font) {
+    const canvas = document.createElement("canvas");
+    const ctx = canvas.getContext("2d");
+    ctx.font = font;
+    return ctx.measureText(text).width;
+  }
+
+  function wrapParagraph(paragraph, width, font) {
+    const words = paragraph.split(/\s+/);
+    const lines = [];
+    let line = "";
+
+    words.forEach(word => {
+      const candidate = line ? line + " " + word : word;
+
+      if (line && measureText(candidate, font) > width) {
+        lines.push(line);
+        line = word;
+      } else {
+        line = candidate;
+      }
+    });
+
+    if (line) lines.push(line);
+    return lines;
+  }
+
+  function reflowBody() {
+    const style = getComputedStyle(textBody);
+    const font = style.fontSize + " " + style.fontFamily;
+    const paragraphs = getBodyParagraphs();
+
+    while (textBody.firstChild) {
+      textBody.removeChild(textBody.firstChild);
+    }
+
+    let y = 60.105732;
+    let first = true;
+
+    paragraphs.forEach(paragraph => {
+      if (!first) y += LINE_HEIGHT;
+      first = false;
+
+      const lines = wrapParagraph(paragraph, TEXT_WIDTH, font);
+
+      lines.forEach(line => {
+        const span = document.createElementNS(NS, "tspan");
+        span.setAttribute("x", TEXT_X);
+        span.setAttribute("y", y);
+        span.textContent = line;
+        textBody.appendChild(span);
+        y += LINE_HEIGHT;
+      });
+    });
+
+    textBody.setAttribute("transform", "translate(0 0)");
+    textBody.style.fontSize = FONT_SIZE + "px";
+    textBody.style.textAlign = "start";
+
+    textArea.setAttribute("x", TEXT_X);
+    textArea.setAttribute("y", "48");
+    textArea.setAttribute("width", TEXT_WIDTH);
+    textArea.setAttribute("height", Math.max(100, y + 15));
+  }
+
+  function mobileLayout() {
+    svg.setAttribute("viewBox", "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT);
+    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+    svg.style.display = "block";
+    svg.style.width = "100%";
+    svg.style.height = "auto";
+    svg.style.maxWidth = "100%";
+
+    /* Bandeau */
+    scaleTo(banner, ARTICLE_X, 8, ARTICLE_WIDTH, 22);
+
+    /* Textes du bandeau : les groupes conservent leurs positions internes. */
+    moveTo(bannerText1, 0, 0);
+    moveTo(bannerText2, 0, 0);
+
+    /* Logo */
+    const logoBox = boxInParent(logo.element);
+    const logoScale = Math.min(
+      0.72,
+      62 / Math.max(1, logoBox.width),
+      82 / Math.max(1, logoBox.height)
+    );
+
+    scaleTo(
+      logo,
+      16,
+      18,
+      logoBox.width * logoScale,
+      logoBox.height * logoScale
+    );
+
+    /* Bloc article */
+    moveTo(article, ARTICLE_X, ARTICLE_Y);
+
+    rect4.setAttribute("x", "0");
+    rect4.setAttribute("y", "0");
+    rect4.setAttribute("width", ARTICLE_WIDTH);
+    rect4.setAttribute("height", "auto");
+
+    /* Titre */
+    textTitle.setAttribute("transform", "translate(5 28)");
+    textTitle.style.fontSize = "18px";
+    textTitle.style.textAlign = "start";
+
+    /* Corps : largeur de texte 338 */
+    reflowBody();
+
+    /* Source */
+    textSource.setAttribute("transform", "translate(5 0)");
+    textSource.style.fontSize = "10.6667px";
+    textSource.style.textAlign = "start";
+
+    /* Copyright déjà présent dans g1 */
+    copyright.setAttribute("transform", "translate(5 0)");
+    copyright.style.fontSize = "10.6667px";
+    copyright.style.textAlign = "start";
+
+    /* Bouton retour */
+    moveTo(home, 330, PAGE_HEIGHT - 55);
+  }
+
+  function desktopLayout() {
+    restoreAttrs(svg, original);
+
+    [
+      article, banner, bannerText1, bannerText2, logo, home
+    ].forEach((item, i) => {
+      if (originalTransforms[i] === null) {
+        item.wrapper.removeAttribute("transform");
+      } else {
+        item.wrapper.setAttribute("transform", originalTransforms[i]);
+      }
+    });
+
+    restoreAttrs(rect4, originalRect4);
+    restoreAttrs(textArea, originalTextArea);
+
+    textElements.forEach((el, i) => {
+      const saved = originalText[i];
+
+      if (saved.transform === null) el.removeAttribute("transform");
+      else el.setAttribute("transform", saved.transform);
+
+      if (saved.style === null) el.removeAttribute("style");
+      else el.setAttribute("style", saved.style);
+
+      while (el.firstChild) el.removeChild(el.firstChild);
+      saved.children.forEach(node => el.appendChild(node.cloneNode(true)));
+    });
+  }
 
   function layout() {
-    const isMobile = window.matchMedia(&quot;(max-width: 600px)&quot;).matches;
-
-    if (!isMobile) {
-      svg.setAttribute(&quot;width&quot;, original.width);
-      svg.setAttribute(&quot;height&quot;, original.height);
-      svg.setAttribute(&quot;viewBox&quot;, original.viewBox);
-
-      svg.style.width = &quot;&quot;;
-      svg.style.height = &quot;&quot;;
-      svg.style.display = &quot;&quot;;
-
-      Object.values(wrappers).forEach(w =&gt; {
-        if (w) w.removeAttribute(&quot;transform&quot;);
-      });
-
-      restoreRectangle(banner, originalBanner);
-
-      svg.removeAttribute(&quot;preserveAspectRatio&quot;);
-      return;
-    }
-
-    svg.setAttribute(&quot;width&quot;, &quot;376&quot;);
-    svg.setAttribute(&quot;height&quot;, &quot;2160&quot;);
-    svg.setAttribute(&quot;viewBox&quot;, &quot;0 0 376 2160&quot;);
-    svg.setAttribute(&quot;preserveAspectRatio&quot;, &quot;xMinYMin meet&quot;);
-
-    svg.style.width = &quot;100vw&quot;;
-    svg.style.height = &quot;auto&quot;;
-    svg.style.display = &quot;block&quot;;
-
-    // Textes et logo de la bannière
-    move(wrappers.logoText, -18.37, -2.58, 1);
-
-    move(
-      wrappers.bannerText,
-      120 - 197.756 * 0.55,
-      60 - 71.160 * 0.55,
-      0.55
-    );
-
-    // Logo graphique
-    move(wrappers.logoGraphic, -590, 0, 1);
-
-    // Rectangle de bannière
-    if (banner) {
-      banner.setAttribute(&quot;x&quot;, &quot;14.124&quot;);
-      banner.setAttribute(&quot;y&quot;, &quot;-173.095&quot;);
-      banner.setAttribute(&quot;width&quot;, &quot;347.75&quot;);
-      banner.setAttribute(&quot;height&quot;, &quot;125&quot;);
-    }
-
-    move(
-      wrappers.bannerRect,
-      14 - 14.124,
-      48.095 - 48.095,
-      1
-    );
-
-    // Contenu principal : un seul groupe, copyright inclus
-    move(
-      wrappers.content,
-      14 - 3.889,
-      190 - 90.824,
-      1
-    );
-
-    // Lien d'accueil
-    move(
-      wrappers.home,
-      330 - 1394.680,
-      2060 - 84.199,
-      1
-    );
+    if (mobileQuery.matches) mobileLayout();
+    else desktopLayout();
   }
 
   layout();
 
-  // Ne relancer la mise en page que si la largeur change.
-  window.addEventListener(&quot;resize&quot;, function () {
-    const newLayoutWidth = document.documentElement.clientWidth;
+  if (mobileQuery.addEventListener) {
+    mobileQuery.addEventListener("change", layout);
+  } else {
+    mobileQuery.addListener(layout);
+  }
 
-    if (newLayoutWidth !== lastLayoutWidth) {
-      lastLayoutWidth = newLayoutWidth;
-      layout();
-    }
-  });
+  window.addEventListener("resize", layout);
+})();
 })();</script>
 </svg>
