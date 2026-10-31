@@ -1737,5 +1737,97 @@
        id="tspan394"><tspan
          style="font-weight:300;font-family:'Leelawadee UI';-inkscape-font-specification:'Leelawadee UI Light'"
          id="tspan393">© Copyright AJIR Régénératif - Tous droits réservés - Reproduction interdite</tspan></tspan></text>
-  <!-- SCRIPT TEMPORAIREMENT DESACTIVE -->
+  <script type="application/ecmascript"><![CDATA[
+(function () {
+  const svg = document.documentElement;
+  const NS = "http://www.w3.org/2000/svg";
+
+  const articles = ["g2", "g3", "g4", "g6"];
+  const originalViewBox = "0 0 1590 725";
+
+  const mobileStyle = document.createElementNS(NS, "style");
+  mobileStyle.textContent = `
+    @media (max-width: 600px) {
+      svg {
+        width: 100vw !important;
+        height: auto !important;
+      }
+    }
+  `;
+  svg.insertBefore(mobileStyle, svg.firstChild);
+
+  const wrappers = {};
+
+  articles.forEach(function (id) {
+    const element = document.getElementById(id);
+    if (!element || !element.parentNode) return;
+
+    const parent = element.parentNode;
+    const wrapper = document.createElementNS(NS, "g");
+    wrapper.setAttribute("id", "responsive-" + id);
+
+    parent.insertBefore(wrapper, element);
+    wrapper.appendChild(element);
+    wrappers[id] = wrapper;
+  });
+
+  const positions = {
+    g2: 14.113,
+    g3: 380.921,
+    g4: 744.839,
+    g6: 1105.648
+  };
+
+  const articleWidth = 348.428;
+  const articleHeight = 453.190;
+  const mobileWidth = 348.428;
+  const mobileGap = 24;
+  const mobileTop = 148.873;
+
+  function layout() {
+    const mobile = window.matchMedia("(max-width: 600px)").matches;
+
+    if (!mobile) {
+      svg.setAttribute("viewBox", originalViewBox);
+      svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
+
+      articles.forEach(function (id) {
+        if (wrappers[id]) {
+          wrappers[id].setAttribute(
+            "transform",
+            "translate(" + (positions[id] - positions[id]) + " 0)"
+          );
+        }
+      });
+      return;
+    }
+
+    const scale = window.innerWidth / mobileWidth;
+    const pageHeight = mobileTop + articles.length * (articleHeight + mobileGap) + 120;
+
+    svg.setAttribute(
+      "viewBox",
+      "0 0 " + mobileWidth + " " + pageHeight
+    );
+    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+    svg.style.width = "100vw";
+    svg.style.height = "auto";
+
+    articles.forEach(function (id, index) {
+      if (!wrappers[id]) return;
+
+      const x = positions[id];
+      const y = mobileTop + index * (articleHeight + mobileGap);
+
+      wrappers[id].setAttribute(
+        "transform",
+        "translate(" + (-x + 14.113) + " " + (y - 148.873) + ")"
+      );
+    });
+  }
+
+  layout();
+  window.addEventListener("resize", layout);
+})();
+]]></script>
 </svg>
