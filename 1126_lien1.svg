@@ -1333,4 +1333,233 @@
        id="path4"
        sodipodi:nodetypes="cccc" />
   </a>
+   <script>
+(function () {
+  const svg = document.documentElement;
+  const NS = "http://www.w3.org/2000/svg";
+
+  const original = {
+    width: "1590",
+    height: "725",
+    viewBox: "0 0 1590 725"
+  };
+
+  const originalBanner = {
+    x: "3.0911472",
+    y: "-91.298477",
+    width: "1439.238",
+    height: "92.063461"
+  };
+
+  const originalContent = {
+    x: "3.8890378",
+    y: "100.82375",
+    width: "1437.071",
+    height: "634.90179"
+  };
+
+  const originalTextAreas = {
+    rect40: {
+      x: "34.920635",
+      y: "48.095276",
+      width: "1297.8047",
+      height: "43.53154"
+    },
+    rect41: {
+      x: "34.920635",
+      y: "48.095276",
+      width: "1300.5928",
+      height: "554.27478"
+    },
+    rect39: {
+      x: "34.920635",
+      y: "48.095276",
+      width: "1221.9281",
+      height: "43.715385"
+    },
+    rect43: {
+      x: "34.920635",
+      y: "48.095276",
+      width: "1297.7916",
+      height: "41.599388"
+    }
+  };
+
+  function wrap(id, wrapperId) {
+    const element = document.getElementById(id);
+    if (!element) return null;
+
+    let wrapper = document.getElementById(wrapperId);
+    if (wrapper) return wrapper;
+
+    wrapper = document.createElementNS(NS, "g");
+    wrapper.setAttribute("id", wrapperId);
+
+    element.parentNode.insertBefore(wrapper, element);
+    wrapper.appendChild(element);
+
+    return wrapper;
+  }
+
+  function move(wrapper, x, y, scale) {
+    if (!wrapper) return;
+
+    scale = scale || 1;
+
+    wrapper.setAttribute(
+      "transform",
+      "translate(" + x + " " + y + ") scale(" + scale + ")"
+    );
+  }
+
+  function restoreAttributes(element, values) {
+    if (!element) return;
+
+    Object.keys(values).forEach(key => {
+      element.setAttribute(key, values[key]);
+    });
+  }
+
+  const banner = document.getElementById("rect8");
+  const contentBackground = document.getElementById("rect4");
+
+  const titleArea = document.getElementById("rect40");
+  const bodyArea = document.getElementById("rect41");
+  const copyrightArea = document.getElementById("rect39");
+  const sourceArea = document.getElementById("rect43");
+
+  const wrappers = {
+    banner: wrap("rect8", "mobile-wrapper-banner"),
+    bannerText: wrap("g3", "mobile-wrapper-banner-text"),
+    logoText: wrap("g2", "mobile-wrapper-logo-text"),
+    logoGraphic: wrap("g41", "mobile-wrapper-logo-graphic"),
+    content: wrap("g1", "mobile-wrapper-content"),
+    home: wrap("a1", "mobile-wrapper-home")
+  };
+
+  function restoreDesktop() {
+    svg.setAttribute("width", original.width);
+    svg.setAttribute("height", original.height);
+    svg.setAttribute("viewBox", original.viewBox);
+
+    svg.style.width = "";
+    svg.style.height = "";
+    svg.style.display = "";
+
+    Object.values(wrappers).forEach(wrapper => {
+      if (wrapper) wrapper.removeAttribute("transform");
+    });
+
+    restoreAttributes(banner, originalBanner);
+    restoreAttributes(contentBackground, originalContent);
+
+    restoreAttributes(titleArea, originalTextAreas.rect40);
+    restoreAttributes(bodyArea, originalTextAreas.rect41);
+    restoreAttributes(copyrightArea, originalTextAreas.rect39);
+    restoreAttributes(sourceArea, originalTextAreas.rect43);
+
+    svg.removeAttribute("preserveAspectRatio");
+  }
+
+  function layoutMobile() {
+    svg.setAttribute("width", "376");
+    svg.setAttribute("height", "2160");
+    svg.setAttribute("viewBox", "0 0 376 2160");
+    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+
+    svg.style.width = "100vw";
+    svg.style.height = "auto";
+    svg.style.display = "block";
+
+    // Bannière
+    if (banner) {
+      banner.setAttribute("x", "14.124");
+      banner.setAttribute("y", "-173.095");
+      banner.setAttribute("width", "347.75");
+      banner.setAttribute("height", "125");
+    }
+
+    move(wrappers.banner, 0, 48.095, 1);
+
+    // Textes de la bannière
+    move(wrappers.logoText, -18.37, -2.58, 1);
+    move(wrappers.bannerText, -346, 45, 0.65);
+
+    // Logo graphique
+    move(wrappers.logoGraphic, -590, 0, 1);
+
+    // Fond du contenu principal
+    if (contentBackground) {
+      contentBackground.setAttribute("x", "14");
+      contentBackground.setAttribute("y", "0");
+      contentBackground.setAttribute("width", "347.75");
+      contentBackground.setAttribute("height", "1700");
+    }
+
+    // Recomposition du titre sur mobile
+    if (titleArea) {
+      titleArea.setAttribute("x", "14");
+      titleArea.setAttribute("y", "0");
+      titleArea.setAttribute("width", "320");
+      titleArea.setAttribute("height", "115");
+    }
+
+    // Recomposition du corps de texte sur mobile
+    if (bodyArea) {
+      bodyArea.setAttribute("x", "14");
+      bodyArea.setAttribute("y", "0");
+      bodyArea.setAttribute("width", "320");
+      bodyArea.setAttribute("height", "1350");
+    }
+
+    // Zone de la référence
+    if (sourceArea) {
+      sourceArea.setAttribute("x", "14");
+      sourceArea.setAttribute("y", "0");
+      sourceArea.setAttribute("width", "320");
+      sourceArea.setAttribute("height", "80");
+    }
+
+    // Zone du copyright
+    if (copyrightArea) {
+      copyrightArea.setAttribute("x", "14");
+      copyrightArea.setAttribute("y", "0");
+      copyrightArea.setAttribute("width", "320");
+      copyrightArea.setAttribute("height", "55");
+    }
+
+    // Ensemble du contenu : une seule colonne
+    move(wrappers.content, 0, 190, 1);
+
+    // Lien d'accueil
+    move(wrappers.home, 330 - 1394.680, 2060 - 84.199, 1);
+  }
+
+  // Ignore les changements de hauteur dus au défilement.
+  let lastLayoutWidth = document.documentElement.clientWidth;
+
+  function layout() {
+    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+
+    if (!isMobile) {
+      restoreDesktop();
+      return;
+    }
+
+    layoutMobile();
+  }
+
+  layout();
+
+  // Ne relance la mise en page que si la largeur change.
+  window.addEventListener("resize", function () {
+    const newLayoutWidth = document.documentElement.clientWidth;
+
+    if (newLayoutWidth !== lastLayoutWidth) {
+      lastLayoutWidth = newLayoutWidth;
+      layout();
+    }
+  });
+})();
+</script>
 </svg>
