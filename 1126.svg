@@ -1738,6 +1738,7 @@
          style="font-weight:300;font-family:'Leelawadee UI';-inkscape-font-specification:'Leelawadee UI Light'"
          id="tspan393">© Copyright AJIR Régénératif - Tous droits réservés - Reproduction interdite</tspan></tspan></text>
  <script type="application/ecmascript"><![CDATA[
+
 (function () {
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
@@ -1789,6 +1790,7 @@
   function move(wrapper, x, y, scale) {
     if (!wrapper) return;
     scale = scale || 1;
+
     wrapper.setAttribute(
       "transform",
       "translate(" + x + " " + y + ") scale(" + scale + ")"
@@ -1802,8 +1804,10 @@
       svg.setAttribute("width", original.width);
       svg.setAttribute("height", original.height);
       svg.setAttribute("viewBox", original.viewBox);
+
       svg.style.width = "";
       svg.style.height = "";
+      svg.style.display = "";
 
       Object.values(wrappers).forEach(w => {
         if (w) w.removeAttribute("transform");
@@ -1827,13 +1831,21 @@
       return;
     }
 
+    /*
+     * DIMENSIONS ET CENTRAGE DU SVG MOBILE
+     */
+    svg.setAttribute("width", "376");
+    svg.setAttribute("height", "2160");
     svg.setAttribute("viewBox", "0 0 376 2160");
-    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+    svg.setAttribute("preserveAspectRatio", "xMidYMin meet");
+
     svg.style.width = "100vw";
     svg.style.height = "auto";
     svg.style.display = "block";
 
-    // Bandeau
+    /*
+     * BANDEAU RECTANGLE
+     */
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "48.095");
@@ -1858,8 +1870,7 @@
     );
 
     /*
-     * BLOC VERROUILLÉ :
-     * Empilement des quatre articles.
+     * BLOC VERROUILLÉ : EMPILEMENT DES ARTICLES
      * Ne pas modifier sans autorisation expresse.
      */
     const articleStart = 190;
@@ -1874,6 +1885,9 @@
       );
     });
 
+    /*
+     * LIEN HOME
+     */
     move(
       wrappers.home,
       330 - 1394.680,
@@ -1881,6 +1895,9 @@
       1
     );
 
+    /*
+     * RECTANGLE COPYRIGHT
+     */
     if (copyrightRect) {
       copyrightRect.setAttribute("x", "14");
       copyrightRect.setAttribute("y", "2110");
