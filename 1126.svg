@@ -1739,8 +1739,15 @@
          id="tspan393">© Copyright AJIR Régénératif - Tous droits réservés - Reproduction interdite</tspan></tspan></text>
  <script type="application/ecmascript"><![CDATA[
 (function () {
-  const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
+
+  // Récupération de la véritable racine SVG,
+  // que le SVG soit autonome ou intégré dans une page HTML.
+  const svg =
+    (document.currentScript && document.currentScript.ownerSVGElement) ||
+    document.getElementById("svg4") ||
+    document.documentElement;
+
   const mobileQuery = window.matchMedia("(max-width: 600px)");
 
   const articleIds = ["g2", "g3", "g4", "g6"];
@@ -1754,7 +1761,7 @@
   const pageHeight = 2250;
 
   function makeWrapper(id, wrapperId) {
-    const element = document.getElementById(id);
+    const element = svg.ownerDocument.getElementById(id);
     if (!element) throw new Error("Élément absent : " + id);
 
     if (element.parentElement.id === wrapperId) {
@@ -1765,26 +1772,33 @@
     wrapper.setAttribute("id", wrapperId);
     element.parentNode.insertBefore(wrapper, element);
     wrapper.appendChild(element);
+
     return { element, wrapper };
   }
 
+  // Les quatre articles
   const articles = articleIds.map((id, i) =>
     makeWrapper(id, "responsive-" + id)
   );
 
-  // Fond du bandeau et fond du copyright
-  const bannerBackground = makeWrapper("g1", "responsive-banner-background");
-  const copyrightBackground = makeWrapper("g9", "responsive-copyright-background");
+  // Les deux fonds
+  const bannerBackground =
+    makeWrapper("g1", "responsive-banner-background");
 
+  const copyrightBackground =
+    makeWrapper("g9", "responsive-copyright-background");
+
+  // Les autres éléments
   const logo = makeWrapper("a1", "responsive-logo");
   const title1 = makeWrapper("text11", "responsive-text11");
   const subtitle1 = makeWrapper("text21", "responsive-text21");
   const title2 = makeWrapper("text15", "responsive-text15");
   const subtitle2 = makeWrapper("text16", "responsive-text16");
   const home = makeWrapper("a5", "responsive-home");
-  const copyrightText = makeWrapper("text38", "responsive-copyright-text");
+  const copyrightText =
+    makeWrapper("text38", "responsive-copyright-text");
 
-  const reference = document.getElementById("text41");
+  const reference = svg.ownerDocument.getElementById("text41");
   if (!reference) throw new Error("text41 introuvable");
 
   const referenceSize = parseFloat(
@@ -1807,9 +1821,12 @@
   function setText(entry) {
     const element = entry.item.element;
     const wrapper = entry.item.wrapper;
-    element.style.fontSize = (referenceSize * entry.ratio) + "px";
+
+    element.style.fontSize =
+      (referenceSize * entry.ratio) + "px";
 
     const box = element.getBBox();
+
     wrapper.setAttribute(
       "transform",
       "translate(" + (entry.x - box.x) + " " +
@@ -1817,8 +1834,10 @@
     );
   }
 
-  // Adaptation horizontale des fonds, sans changer leur hauteur.
-  function resizeBackground(item, originalX, originalY, originalWidth, targetY) {
+  // Redimensionnement horizontal d'un fond.
+  // La hauteur d'origine est conservée.
+  function resizeBackground(item, originalX, originalY,
+                            originalWidth, targetY) {
     const targetWidth = 348;
     const scaleX = targetWidth / originalWidth;
 
@@ -1834,13 +1853,17 @@
 
   function layout() {
     if (!mobileQuery.matches) {
+      // Retour à la présentation ordinateur
       svg.setAttribute("viewBox", "0 0 1590 725");
       svg.setAttribute("width", "1590");
       svg.setAttribute("height", "725");
       svg.style.width = "";
       svg.style.height = "";
+      svg.style.display = "";
 
-      articles.forEach(item => item.wrapper.removeAttribute("transform"));
+      articles.forEach(item =>
+        item.wrapper.removeAttribute("transform")
+      );
 
       [
         bannerBackground,
@@ -1852,21 +1875,33 @@
         subtitle2,
         home,
         copyrightText
-      ].forEach(item => item.wrapper.removeAttribute("transform"));
+      ].forEach(item =>
+        item.wrapper.removeAttribute("transform")
+      );
 
       textItems.forEach((entry, i) => {
         if (originalFontSizes[i] === null) {
           entry.item.element.removeAttribute("style");
         } else {
-          entry.item.element.setAttribute("style", originalFontSizes[i]);
+          entry.item.element.setAttribute(
+            "style",
+            originalFontSizes[i]
+          );
         }
       });
 
       return;
     }
 
-    svg.setAttribute("viewBox", "0 0 " + mobileWidth + " " + pageHeight);
+    // Dimensions mobiles
+    svg.setAttribute(
+      "viewBox",
+      "0 0 " + mobileWidth + " " + pageHeight
+    );
+    svg.setAttribute("width", "376");
+    svg.setAttribute("height", String(pageHeight));
     svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+
     svg.style.width = "100%";
     svg.style.height = "auto";
     svg.style.display = "block";
@@ -1876,12 +1911,14 @@
       item.wrapper.setAttribute(
         "transform",
         "translate(" + (14.113 - articleX[i]) + " " +
-        (articleTop + i * (articleHeight + articleGap) - articleY[i]) + ")"
+        (articleTop + i * (articleHeight + articleGap) -
+        articleY[i]) + ")"
       );
     });
 
-    // 2. Fond du bandeau : largeur mobile de 348 unités
-    // Coordonnées d'origine du rectangle rect8
+    // 2. Fond du bandeau
+    // x = 14.124 ; y visible = 48.095
+    // largeur initiale = 1439.238
     resizeBackground(
       bannerBackground,
       14.124,
@@ -1891,21 +1928,26 @@
     );
 
     // 3. Logo
-    logo.wrapper.setAttribute("transform", "translate(-25 -43) scale(0.70)");
+    logo.wrapper.setAttribute(
+      "transform",
+      "translate(-25 -43) scale(0.70)"
+    );
 
-    // 4. Textes du bandeau
+    // 4. Textes du bandeau et copyright
     textItems.forEach(setText);
 
     // 5. Lien d'accueil
     const homeBox = home.element.getBBox();
+
     home.wrapper.setAttribute(
       "transform",
       "translate(" + (330 - homeBox.x) + " " +
       (2150 - homeBox.y) + ")"
     );
 
-    // 6. Fond du copyright : largeur mobile de 348 unités
-    // Coordonnées d'origine du rectangle rect38
+    // 6. Fond du copyright
+    // x = 466.80795 ; y visible = 635.36621
+    // largeur initiale = 548.28284
     resizeBackground(
       copyrightBackground,
       466.80795,
@@ -1915,8 +1957,18 @@
     );
   }
 
+  // Application initiale
   layout();
-  mobileQuery.addEventListener("change", layout);
+
+  // Actualisation lors d'un changement de largeur
+  if (mobileQuery.addEventListener) {
+    mobileQuery.addEventListener("change", layout);
+  } else {
+    mobileQuery.addListener(layout);
+  }
+
+  window.addEventListener("resize", layout);
+
 })();
 ]]></script>
 </svg>
