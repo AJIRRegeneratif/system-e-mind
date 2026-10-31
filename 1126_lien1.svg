@@ -1340,102 +1340,108 @@
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
   const XHTML = "http://www.w3.org/1999/xhtml";
-  const media = window.matchMedia("(max-width: 600px)");
 
-  const MOBILE = {
-    width: 376,
-    margin: 14,
-    bannerX: 14,
-    bannerY: 8,
-    bannerWidth: 348,
-    bannerHeight: 92,
-    articleX: 14,
-    articleY: 120,
-    articleWidth: 348,
-    textWidth: 338
+  const mobileQuery = window.matchMedia("(max-width: 600px)");
+
+  const original = {
+    width: svg.getAttribute("width"),
+    height: svg.getAttribute("height"),
+    viewBox: svg.getAttribute("viewBox"),
+    preserveAspectRatio: svg.getAttribute("preserveAspectRatio"),
+    style: svg.getAttribute("style")
   };
 
   const ids = [
     "rect8", "g41", "g1", "rect4",
     "text11", "text21", "text15", "text16",
-    "text39", "text41", "text43", "text38",
-    "rect41"
+    "text39", "text41", "text43", "text38"
   ];
 
-  function byId(id) {
+  const elements = {};
+  const originalAttributes = {};
+
+  ids.forEach(function (id) {
     const el = document.getElementById(id);
     if (!el) throw new Error("Élément SVG absent : " + id);
-    return el;
-  }
 
-  const elements = {};
-  ids.forEach(id => elements[id] = byId(id));
-
-  const original = {};
-  ids.forEach(id => {
-    const el = elements[id];
-    original[id] = {};
-    ["x", "y", "width", "height", "transform", "style", "display"].forEach(a => {
-      original[id][a] = el.getAttribute(a);
-    });
-  });
-
-  const originalRoot = {};
-  ["viewBox", "width", "height", "preserveAspectRatio", "style"].forEach(a => {
-    originalRoot[a] = svg.getAttribute(a);
+    elements[id] = el;
+    originalAttributes[id] = {
+      transform: el.getAttribute("transform"),
+      x: el.getAttribute("x"),
+      y: el.getAttribute("y"),
+      width: el.getAttribute("width"),
+      height: el.getAttribute("height"),
+      style: el.getAttribute("style"),
+      display: el.getAttribute("display")
+    };
   });
 
   const originalText41 = elements.text41.innerHTML;
-  const originalG1Transform = elements.g1.getAttribute("transform");
 
-  let foreignObject = null;
-  let htmlText = null;
-  let htmlTitle = null;
-  let htmlSource = null;
-  let htmlCopyright = null;
+  function wrap(id, wrapperId) {
+    const element = document.getElementById(id);
+    if (!element) return null;
 
-  function restore(el, attributes) {
-    Object.keys(attributes).forEach(name => {
-      const value = attributes[name];
-      if (value === null) el.removeAttribute(name);
-      else el.setAttribute(name, value);
-    });
+    let wrapper = document.getElementById(wrapperId);
+    if (wrapper) return wrapper;
+
+    wrapper = document.createElementNS(NS, "g");
+    wrapper.setAttribute("id", wrapperId);
+
+    element.parentNode.insertBefore(wrapper, element);
+    wrapper.appendChild(element);
+
+    return wrapper;
   }
 
-  function makeForeignObject() {
-    foreignObject = document.createElementNS(NS, "foreignObject");
-    foreignObject.setAttribute("id", "responsive-text-mobile");
-    foreignObject.setAttribute("x", "5");
-    foreignObject.setAttribute("y", "0");
-    foreignObject.setAttribute("width", String(MOBILE.textWidth));
+  const wrappers = {
+    banner: wrap("rect8", "mobile-wrapper-banner"),
+    logo: wrap("g41", "mobile-wrapper-logo"),
+    article: wrap("g1", "mobile-wrapper-article"),
+    title: wrap("text39", "mobile-wrapper-article-title"),
+    header1: wrap("text11", "mobile-wrapper-header1"),
+    header2: wrap("text21", "mobile-wrapper-header2"),
+    header3: wrap("text15", "mobile-wrapper-header3"),
+    header4: wrap("text16", "mobile-wrapper-header4")
+  };
 
-    const container = document.createElementNS(XHTML, "div");
-    container.setAttribute("xmlns", XHTML);
-    container.style.cssText =
-      "width:100%;box-sizing:border-box;" +
-      "font-family:Arial,sans-serif;font-size:13.333px;" +
-      "line-height:1.35;color:#fff;text-align:left;" +
-      "overflow-wrap:anywhere;word-break:normal;" +
-      "white-space:normal;margin:0;padding:0;";
+  function move(wrapper, x, y, scale) {
+    if (!wrapper) return;
+    scale = scale || 1;
 
-    htmlText = container;
-
-    foreignObject.appendChild(container);
-    elements.g1.appendChild(foreignObject);
+    wrapper.setAttribute(
+      "transform",
+      "translate(" + x + " " + y + ") scale(" + scale + ")"
+    );
   }
 
-  function extractParagraphs(textElement) {
+  function restoreAttribute(element, name, value) {
+    if (value === null) element.removeAttribute(name);
+    else element.setAttribute(name, value);
+  }
+
+  function removeShapeInside(element) {
+    const style = element.getAttribute("style") || "";
+    const cleaned = style
+      .replace(/shape-inside\s*:[^;]+;?/gi, "")
+      .replace(/;;+/g, ";");
+
+    element.setAttribute("style", cleaned);
+  }
+
+  function getParagraphs() {
     const paragraphs = [];
     let current = "";
 
-    Array.from(textElement.children).forEach(span => {
+    Array.from(elements.text41.children).forEach(function (span) {
       const value = span.textContent || "";
 
       if (value.trim() === "") {
         if (current.trim()) paragraphs.push(current.trim());
         current = "";
       } else {
-        current += (current ? " " : "") + value.replace(/\s+/g, " ").trim();
+        current += (current ? " " : "") +
+          value.replace(/\s+/g, " ").trim();
       }
     });
 
@@ -1444,53 +1450,77 @@
     return paragraphs;
   }
 
-  function fillBody() {
-    const paragraphs = extractParagraphs(elements.text41);
-    htmlText.innerHTML = "";
+  let foreignObject = null;
+  let bodyHTML = null;
+  let sourceObject = null;
+  let copyrightObject = null;
 
-    paragraphs.forEach((paragraph, index) => {
+  function createHTMLBlock(id, x, y, width, fontSize, lineHeight) {
+    const fo = document.createElementNS(NS, "foreignObject");
+    fo.setAttribute("id", id);
+    fo.setAttribute("x", String(x));
+    fo.setAttribute("y", String(y));
+    fo.setAttribute("width", String(width));
+
+    const div = document.createElementNS(XHTML, "div");
+    div.setAttribute("xmlns", XHTML);
+    div.style.cssText =
+      "box-sizing:border-box;width:100%;margin:0;padding:0;" +
+      "font-family:Arial,sans-serif;" +
+      "font-size:" + fontSize + "px;" +
+      "line-height:" + lineHeight + ";" +
+      "color:#fff;text-align:left;" +
+      "white-space:normal;overflow-wrap:break-word;" +
+      "word-break:normal;";
+
+    fo.appendChild(div);
+    elements.g1.appendChild(fo);
+
+    return { object: fo, content: div };
+  }
+
+  function createMobileText() {
+    if (foreignObject) foreignObject.remove();
+    if (sourceObject) sourceObject.remove();
+    if (copyrightObject) copyrightObject.remove();
+
+    const body = createHTMLBlock(
+      "mobile-body-text", 5, 0, 338, 13.333, 1.35
+    );
+
+    foreignObject = body.object;
+    bodyHTML = body.content;
+
+    getParagraphs().forEach(function (paragraph, index, all) {
       const p = document.createElementNS(XHTML, "p");
       p.textContent = paragraph;
-      p.style.cssText =
-        "margin:0 0 " + (index === paragraphs.length - 1 ? "0" : "12px") +
-        " 0;padding:0;";
-      htmlText.appendChild(p);
+      p.style.margin = index === all.length - 1 ? "0" : "0 0 12px 0";
+      p.style.padding = "0";
+      bodyHTML.appendChild(p);
     });
+
+    const source = createHTMLBlock(
+      "mobile-source-text", 5, 0, 338, 10.5, 1.25
+    );
+
+    sourceObject = source.object;
+    source.content.textContent = elements.text43.textContent.trim();
+
+    const copyright = createHTMLBlock(
+      "mobile-copyright-text", 5, 0, 338, 9.5, 1.2
+    );
+
+    copyrightObject = copyright.object;
+    copyright.content.textContent = elements.text38.textContent.trim();
+
+    elements.text41.style.display = "none";
+    elements.text43.style.display = "none";
+    elements.text38.style.display = "none";
   }
 
-  function addHtmlLine(parent, text, style) {
-    const div = document.createElementNS(XHTML, "div");
-    div.textContent = text;
-    div.setAttribute("style", style);
-    parent.appendChild(div);
-    return div;
-  }
-
-  function removeOldMobileObjects() {
-    if (foreignObject && foreignObject.parentNode) {
-      foreignObject.parentNode.removeChild(foreignObject);
-    }
-    foreignObject = null;
-    htmlText = null;
-  }
-
-  function hideDecorativePaths() {
-    ["path73", "path18", "path50"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = "none";
-    });
-  }
-
-  function restoreDecorativePaths() {
-    ["path73", "path18", "path50"].forEach(id => {
-      const el = document.getElementById(id);
-      if (el) el.style.display = "";
-    });
-  }
-
-  function mobileLayout() {
-    removeOldMobileObjects();
-
+  function layoutMobile() {
+    svg.setAttribute("width", "376");
+    svg.setAttribute("height", "900");
     svg.setAttribute("viewBox", "0 0 376 900");
     svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
     svg.style.width = "100%";
@@ -1498,169 +1528,168 @@
     svg.style.maxWidth = "100%";
     svg.style.display = "block";
 
-    /* BANDEAU */
-    const banner = elements.rect8;
-    banner.removeAttribute("transform");
-    banner.setAttribute("x", MOBILE.bannerX);
-    banner.setAttribute("y", MOBILE.bannerY);
-    banner.setAttribute("width", MOBILE.bannerWidth);
-    banner.setAttribute("height", MOBILE.bannerHeight);
+    /* BANDEAU : dimensions et position */
+    elements.rect8.removeAttribute("transform");
+    elements.rect8.setAttribute("x", "14");
+    elements.rect8.setAttribute("y", "8");
+    elements.rect8.setAttribute("width", "348");
+    elements.rect8.setAttribute("height", "92");
+
+    wrappers.banner.removeAttribute("transform");
 
     /* LOGO */
-    elements.g41.setAttribute(
-      "transform",
-      "matrix(0.105,0,0,0.105,20,17)"
-    );
+    move(wrappers.logo, 18, 13, 0.105);
 
     /* TEXTES DU BANDEAU */
-    const headerTexts = [
-      ["text11", "translate(96,31)", "17px"],
-      ["text21", "translate(96,45)", "9px"],
-      ["text15", "translate(96,66)", "14px"],
-      ["text16", "translate(96,81)", "9px"]
+    const headerPositions = [
+      ["header1", 96, 31, 17],
+      ["header2", 96, 45, 9],
+      ["header3", 96, 66, 14],
+      ["header4", 96, 81, 9]
     ];
 
-    headerTexts.forEach(([id, transform, size]) => {
-      const el = elements[id];
-      el.setAttribute("transform", transform);
-      el.style.fontSize = size;
+    headerPositions.forEach(function (item) {
+      const wrapper = wrappers[item[0]];
+      const el = wrapper.firstElementChild;
+
+      el.style.fontSize = item[3] + "px";
       el.style.textAnchor = "start";
-      el.style.display = "inline";
+
+      move(wrapper, item[1], item[2], 1);
     });
 
-    /* PANNEAU ARTICLE */
-    const article = elements.g1;
-    article.removeAttribute("transform");
-    article.setAttribute("transform",
-      "translate(" + MOBILE.articleX + "," + MOBILE.articleY + ")");
+    /* ARTICLE */
+    move(wrappers.article, 14, 120, 1);
 
-    const panel = elements.rect4;
-    panel.setAttribute("x", "0");
-    panel.setAttribute("y", "0");
-    panel.setAttribute("width", MOBILE.articleWidth);
-    panel.setAttribute("height", "500");
+    elements.g1.removeAttribute("transform");
 
-    /* TITRE */
+    elements.rect4.setAttribute("x", "0");
+    elements.rect4.setAttribute("y", "0");
+    elements.rect4.setAttribute("width", "348");
+    elements.rect4.setAttribute("height", "500");
+
+    /* TITRE DE L'ARTICLE */
     const title = elements.text39;
-    title.setAttribute("transform", "translate(5,27)");
-    title.removeAttribute("x");
-    title.style.fontSize = "17px";
+    removeShapeInside(title);
     title.style.textAnchor = "start";
+    title.style.fontSize = "17px";
     title.style.whiteSpace = "normal";
-    title.style.shapeInside = "none";
 
-    /* TEXTE PRINCIPAL : composition HTML avec retour à la ligne */
-    const body = elements.text41;
-    body.style.display = "none";
+    title.setAttribute("transform", "translate(5 28)");
 
-    makeForeignObject();
-    fillBody();
+    /* TEXTE PRINCIPAL */
+    createMobileText();
 
-    /* SOURCE */
-    const source = elements.text43;
-    source.style.display = "none";
-
-    /* COPYRIGHT */
+    /* Masquer les éléments SVG remplacés par les blocs HTML */
+    elements.text43.style.display = "none";
     elements.text38.style.display = "none";
 
-    /* Zone de composition SVG : largeur mobile demandée */
-    elements.rect41.setAttribute("x", "5");
-    elements.rect41.setAttribute("y", "0");
-    elements.rect41.setAttribute("width", MOBILE.textWidth);
-    elements.rect41.setAttribute("height", "1000");
+    ["path73", "path18", "path50"].forEach(function (id) {
+      const el = document.getElementById(id);
+      if (el) el.style.display = "none";
+    });
 
-    hideDecorativePaths();
-
-    /* Mesure réelle du texte après composition HTML */
     requestAnimationFrame(function () {
-      if (!media.matches || !foreignObject) return;
+      if (!mobileQuery.matches || !foreignObject) return;
 
-      const titleBox = title.getBBox();
-      const titleHeight = Math.max(24, titleBox.height);
-      const bodyY = titleHeight + 25;
+      const titleHeight = title.getBBox().height;
+      const bodyY = Math.max(42, titleHeight + 20);
 
       foreignObject.setAttribute("y", String(bodyY));
 
-      const bodyHeight = htmlText.getBoundingClientRect().height;
-      const bodyEnd = bodyY + bodyHeight;
+      const bodyHeight =
+        bodyHTML.getBoundingClientRect().height *
+        (376 / svg.getBoundingClientRect().width);
 
-      const sourceText = elements.text43.textContent.trim();
-      const sourceY = bodyEnd + 22;
+      const sourceY = bodyY + bodyHeight + 20;
+      sourceObject.setAttribute("y", String(sourceY));
 
-      const sourceFO = document.createElementNS(NS, "foreignObject");
-      sourceFO.setAttribute("x", "5");
-      sourceFO.setAttribute("y", String(sourceY));
-      sourceFO.setAttribute("width", String(MOBILE.textWidth));
-      sourceFO.setAttribute("height", "50");
+      sourceObject.setAttribute(
+        "height",
+        String(sourceObject.firstElementChild.getBoundingClientRect().height + 4)
+      );
 
-      const sourceDiv = document.createElementNS(XHTML, "div");
-      sourceDiv.setAttribute("xmlns", XHTML);
-      sourceDiv.style.cssText =
-        "font:10px Arial,sans-serif;color:white;" +
-        "line-height:1.25;overflow-wrap:anywhere;";
-      sourceDiv.textContent = sourceText;
-      sourceFO.appendChild(sourceDiv);
-      article.appendChild(sourceFO);
+      const sourceHeight =
+        sourceObject.firstElementChild.getBoundingClientRect().height *
+        (376 / svg.getBoundingClientRect().width);
 
-      const copyrightY = sourceY + sourceFO.getBoundingClientRect().height + 18;
-      const copyrightFO = document.createElementNS(NS, "foreignObject");
-      copyrightFO.setAttribute("x", "5");
-      copyrightFO.setAttribute("y", String(copyrightY));
-      copyrightFO.setAttribute("width", String(MOBILE.textWidth));
-      copyrightFO.setAttribute("height", "30");
+      const copyrightY = sourceY + sourceHeight + 16;
+      copyrightObject.setAttribute("y", String(copyrightY));
 
-      const copyrightDiv = document.createElementNS(XHTML, "div");
-      copyrightDiv.setAttribute("xmlns", XHTML);
-      copyrightDiv.style.cssText =
-        "font:9px Arial,sans-serif;color:white;" +
-        "line-height:1.2;overflow-wrap:anywhere;";
-      copyrightDiv.textContent = elements.text38.textContent.trim();
-      copyrightFO.appendChild(copyrightDiv);
-      article.appendChild(copyrightFO);
+      const copyrightHeight =
+        copyrightObject.firstElementChild.getBoundingClientRect().height *
+        (376 / svg.getBoundingClientRect().width);
 
-      const finalHeight = copyrightY + 30 + 18;
-      panel.setAttribute("height", String(finalHeight));
+      const totalHeight = copyrightY + copyrightHeight + 22;
 
-      svg.setAttribute("viewBox",
-        "0 0 376 " + (MOBILE.articleY + finalHeight + 25));
+      elements.rect4.setAttribute("height", String(totalHeight));
+
+      svg.setAttribute(
+        "viewBox",
+        "0 0 376 " + (120 + totalHeight + 20)
+      );
+
+      svg.setAttribute("height", String(120 + totalHeight + 20));
     });
   }
 
-  function desktopLayout() {
-    removeOldMobileObjects();
-    restoreDecorativePaths();
+  function layoutDesktop() {
+    if (foreignObject) foreignObject.remove();
+    if (sourceObject) sourceObject.remove();
+    if (copyrightObject) copyrightObject.remove();
 
-    restore(svg, originalRoot);
+    foreignObject = null;
+    sourceObject = null;
+    copyrightObject = null;
 
-    ids.forEach(id => restore(elements[id], original[id]));
+    restoreAttribute(svg, "width", original.width);
+    restoreAttribute(svg, "height", original.height);
+    restoreAttribute(svg, "viewBox", original.viewBox);
+    restoreAttribute(svg, "preserveAspectRatio", original.preserveAspectRatio);
+    restoreAttribute(svg, "style", original.style);
+
+    ids.forEach(function (id) {
+      const el = elements[id];
+      const values = originalAttributes[id];
+
+      Object.keys(values).forEach(function (name) {
+        restoreAttribute(el, name, values[name]);
+      });
+    });
 
     elements.text41.innerHTML = originalText41;
-    elements.g1.setAttribute("transform", originalG1Transform || "");
 
     elements.text41.style.display = "";
     elements.text43.style.display = "";
     elements.text38.style.display = "";
 
-    ["path73", "path18", "path50"].forEach(id => {
+    Object.values(wrappers).forEach(function (wrapper) {
+      if (wrapper) wrapper.removeAttribute("transform");
+    });
+
+    ["path73", "path18", "path50"].forEach(function (id) {
       const el = document.getElementById(id);
       if (el) el.style.display = "";
     });
   }
 
-  function update() {
-    if (media.matches) mobileLayout();
-    else desktopLayout();
+  function layout() {
+    if (mobileQuery.matches) {
+      layoutMobile();
+    } else {
+      layoutDesktop();
+    }
   }
 
-  update();
+  layout();
 
-  if (media.addEventListener) {
-    media.addEventListener("change", update);
+  if (mobileQuery.addEventListener) {
+    mobileQuery.addEventListener("change", layout);
   } else {
-    media.addListener(update);
+    mobileQuery.addListener(layout);
   }
 
-  window.addEventListener("resize", update);
+  window.addEventListener("resize", layout);
 })();
 ]]></script>
 </svg>
