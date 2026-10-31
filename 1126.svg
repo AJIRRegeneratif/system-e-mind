@@ -1757,11 +1757,6 @@
     viewBox: "0 0 1590 725"
   };
 
-  /*
-   * Crée une enveloppe autour d'un élément SVG.
-   * Cette enveloppe permet de déplacer l'élément
-   * sans modifier ses coordonnées internes.
-   */
   function wrap(id, wrapperId) {
     const element = document.getElementById(id);
     if (!element) return null;
@@ -1780,7 +1775,6 @@
 
   const wrappers = {};
 
-  // Enveloppes des quatre articles
   articles.forEach((article, index) => {
     wrappers[article.id] = wrap(
       article.id,
@@ -1788,20 +1782,17 @@
     );
   });
 
-  // Enveloppes des autres éléments
   wrappers.logo = wrap("a1", "mobile-wrapper-logo");
   wrappers.title = wrap("g7", "mobile-wrapper-title");
   wrappers.subtitle = wrap("g8", "mobile-wrapper-subtitle");
   wrappers.home = wrap("a5", "mobile-wrapper-home");
 
-  // Enveloppes des deux rectangles
   wrappers.banner = wrap("rect8", "mobile-wrapper-banner");
   wrappers.copyrightRect = wrap(
     "rect38",
     "mobile-wrapper-copyright-rect"
   );
 
-  // Enveloppe du texte de copyright
   wrappers.copyrightText = wrap(
     "text38",
     "mobile-wrapper-copyright-text"
@@ -1810,11 +1801,6 @@
   const banner = document.getElementById("rect8");
   const copyrightRect = document.getElementById("rect38");
 
-  /*
-   * Déplacement d'une enveloppe.
-   * Les coordonnées correspondent à la translation
-   * appliquée à l'élément dans le SVG.
-   */
   function move(wrapper, x, y, scale) {
     if (!wrapper) return;
 
@@ -1878,6 +1864,9 @@
     const PAGE_HEIGHT = 2160;
     const MOBILE_CONTENT_WIDTH = 347.75;
 
+    svg.setAttribute("width", String(MOBILE_WIDTH));
+    svg.setAttribute("height", String(PAGE_HEIGHT));
+
     svg.setAttribute(
       "viewBox",
       "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT
@@ -1885,7 +1874,7 @@
 
     svg.setAttribute(
       "preserveAspectRatio",
-      "xMinYMin meet"
+      "xMidYMin meet"
     );
 
     svg.style.width = "100vw";
@@ -1894,11 +1883,6 @@
 
     /*
      * BANDEAU RECTANGLE
-     *
-     * Le rectangle conserve son retournement vertical
-     * d'origine (scale(1,-1)).
-     *
-     * Sa position horizontale est ramenée à x = 14.
      */
     if (banner) {
       banner.setAttribute("x", "14.124");
@@ -1915,7 +1899,7 @@
     );
 
     /*
-     * LOGO DU BANDEAU
+     * LOGO
      */
     move(
       wrappers.logo,
@@ -1935,7 +1919,7 @@
     );
 
     /*
-     * TEXTE SECONDAIRE DU BANDEAU
+     * TEXTE SECONDAIRE
      */
     move(
       wrappers.subtitle,
@@ -1945,10 +1929,7 @@
     );
 
     /*
-     * ARTICLES
-     *
-     * Même logique que dans le script de référence :
-     * chaque article commence à x = 14.
+     * ARTICLES EMPILÉS
      */
     const articleStart = 190;
     const articleStep = 468;
@@ -1974,10 +1955,6 @@
 
     /*
      * RECTANGLE DE COPYRIGHT
-     *
-     * Son bord gauche est ramené à x = 14.
-     * Le rectangle conserve son retournement vertical
-     * d'origine (scale(1,-1)).
      */
     if (copyrightRect) {
       copyrightRect.setAttribute("x", "466.80795");
