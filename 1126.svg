@@ -1739,27 +1739,22 @@
          id="tspan393">© Copyright AJIR Régénératif - Tous droits réservés - Reproduction interdite</tspan></tspan></text>
  <script type="application/ecmascript"><![CDATA[
 (function () {
-  "use strict";
-
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
 
   const articles = [
-    { id: "g2", x: 14.113, y: 148.873 },
-    { id: "g3", x: 380.921, y: 148.873 },
-    { id: "g4", x: 744.839, y: 148.063 },
-    { id: "g6", x: 1105.648, y: 148.063 }
+    {id:"g2", x:14.113, y:148.873},
+    {id:"g3", x:380.921, y:148.873},
+    {id:"g4", x:744.839, y:148.063},
+    {id:"g6", x:1105.648, y:148.063}
   ];
 
   const original = {
-    width: "1590",
-    height: "725",
-    viewBox: "0 0 1590 725"
+    width:"1590",
+    height:"725",
+    viewBox:"0 0 1590 725"
   };
 
-  /*
-   * CRÉATION DES ENVELOPPES SVG
-   */
   function wrap(id, wrapperId) {
     const element = document.getElementById(id);
     if (!element) return null;
@@ -1778,166 +1773,76 @@
 
   const wrappers = {};
 
-  /*
-   * ENVELOPPES DES ARTICLES
-   */
-  articles.forEach((article, index) => {
-    wrappers[article.id] = wrap(
-      article.id,
-      "mobile-wrapper-article-" + index
-    );
+  articles.forEach((a, i) => {
+    wrappers[a.id] = wrap(a.id, "mobile-wrapper-" + i);
   });
 
-  /*
-   * ENVELOPPES DES ÉLÉMENTS DU BANDEAU
-   */
   wrappers.logo = wrap("a1", "mobile-wrapper-logo");
   wrappers.title = wrap("g7", "mobile-wrapper-title");
   wrappers.subtitle = wrap("g8", "mobile-wrapper-subtitle");
-
-  /*
-   * ENVELOPPE DU LIEN HOME
-   */
   wrappers.home = wrap("a5", "mobile-wrapper-home");
-
-  /*
-   * ENVELOPPES DES RECTANGLES
-   * Ces deux déplacements restent indépendants
-   * des autres corrections.
-   */
-  wrappers.banner = wrap("rect8", "mobile-wrapper-banner");
-  wrappers.copyrightRect = wrap(
-    "rect38",
-    "mobile-wrapper-copyright-rect"
-  );
-
-  /*
-   * ENVELOPPE DU TEXTE COPYRIGHT
-   */
-  wrappers.copyrightText = wrap(
-    "text38",
-    "mobile-wrapper-copyright-text"
-  );
+  wrappers.copyright = wrap("text38", "mobile-wrapper-copyright");
 
   const banner = document.getElementById("rect8");
   const copyrightRect = document.getElementById("rect38");
 
-  /*
-   * FONCTION DE DÉPLACEMENT SIMPLE
-   * Fonction conservée comme dans la base de référence.
-   */
   function move(wrapper, x, y, scale) {
     if (!wrapper) return;
-
     scale = scale || 1;
-
     wrapper.setAttribute(
       "transform",
       "translate(" + x + " " + y + ") scale(" + scale + ")"
     );
   }
 
-  function resetWrappers() {
-    Object.values(wrappers).forEach(wrapper => {
-      if (wrapper) {
-        wrapper.removeAttribute("transform");
+  function layout() {
+    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+
+    if (!isMobile) {
+      svg.setAttribute("width", original.width);
+      svg.setAttribute("height", original.height);
+      svg.setAttribute("viewBox", original.viewBox);
+      svg.style.width = "";
+      svg.style.height = "";
+
+      Object.values(wrappers).forEach(w => {
+        if (w) w.removeAttribute("transform");
+      });
+
+      if (banner) {
+        banner.setAttribute("x", "14.124");
+        banner.setAttribute("y", "48.095");
+        banner.setAttribute("width", "1439.238");
+        banner.setAttribute("height", "92.063");
       }
-    });
-  }
 
-  /*
-   * MISE EN PAGE ORDINATEUR
-   */
-  function desktopLayout() {
-    svg.setAttribute("width", original.width);
-    svg.setAttribute("height", original.height);
-    svg.setAttribute("viewBox", original.viewBox);
+      if (copyrightRect) {
+        copyrightRect.setAttribute("x", "466.808");
+        copyrightRect.setAttribute("y", "616.239");
+        copyrightRect.setAttribute("width", "548.283");
+        copyrightRect.setAttribute("height", "19.127");
+      }
 
-    svg.style.width = "";
-    svg.style.height = "";
-    svg.style.display = "";
-
-    resetWrappers();
-
-    if (banner) {
-      banner.setAttribute("x", "14.124");
-      banner.setAttribute("y", "-140.158");
-      banner.setAttribute("width", "1439.238");
-      banner.setAttribute("height", "92.063");
+      svg.removeAttribute("preserveAspectRatio");
+      return;
     }
 
-    if (copyrightRect) {
-      copyrightRect.setAttribute("x", "466.80795");
-      copyrightRect.setAttribute("y", "-635.36621");
-      copyrightRect.setAttribute("width", "548.28284");
-      copyrightRect.setAttribute("height", "19.127499");
-    }
-
-    svg.removeAttribute("preserveAspectRatio");
-  }
-
-  /*
-   * MISE EN PAGE MOBILE
-   */
-  function mobileLayout() {
-    const MOBILE_WIDTH = 376;
-    const PAGE_HEIGHT = 2160;
-    const MOBILE_CONTENT_WIDTH = 347.75;
-
-    /*
-     * DIMENSIONS DU SVG
-     * Le viewBox et les dimensions correspondent.
-     */
-    svg.setAttribute("width", String(MOBILE_WIDTH));
-    svg.setAttribute("height", String(PAGE_HEIGHT));
-    svg.setAttribute(
-      "viewBox",
-      "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT
-    );
-
-    svg.setAttribute(
-      "preserveAspectRatio",
-      "xMidYMin meet"
-    );
-
+    svg.setAttribute("viewBox", "0 0 376 2160");
+    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
     svg.style.width = "100vw";
     svg.style.height = "auto";
     svg.style.display = "block";
-    svg.style.maxWidth = "none";
 
-    /*
-     * ==================================================
-     * BLOC VERROUILLÉ 1 : RECTANGLE DU BANDEAU
-     * Ne pas modifier sans autorisation explicite.
-     * ==================================================
-     */
+    // Bandeau
     if (banner) {
       banner.setAttribute("x", "14.124");
-      banner.setAttribute("y", "-48.095");
-      banner.setAttribute("width", String(MOBILE_CONTENT_WIDTH));
+      banner.setAttribute("y", "48.095");
+      banner.setAttribute("width", "347.75");
       banner.setAttribute("height", "125");
     }
 
-    move(
-      wrappers.banner,
-      14 - 14.124,
-      0,
-      1
-    );
+    move(wrappers.logo, -18.37, -2.58, 1);
 
-    /*
-     * LOGO
-     */
-    move(
-      wrappers.logo,
-      -18.37,
-      -2.58,
-      1
-    );
-
-    /*
-     * TITRE ET TEXTES DU BANDEAU
-     */
     move(
       wrappers.title,
       120 - 197.756 * 0.55,
@@ -1953,26 +1858,22 @@
     );
 
     /*
-     * ==================================================
-     * BLOC VERROUILLÉ 2 : EMPILEMENT DES ARTICLES
-     * Ne pas modifier sans autorisation explicite.
-     * ==================================================
+     * BLOC VERROUILLÉ :
+     * Empilement des quatre articles.
+     * Ne pas modifier sans autorisation expresse.
      */
     const articleStart = 190;
     const articleStep = 468;
 
-    articles.forEach((article, index) => {
+    articles.forEach((a, i) => {
       move(
-        wrappers[article.id],
-        14 - article.x,
-        articleStart + index * articleStep - article.y,
+        wrappers[a.id],
+        14 - a.x,
+        articleStart + i * articleStep - a.y,
         1
       );
     });
 
-    /*
-     * LIEN HOME
-     */
     move(
       wrappers.home,
       330 - 1394.680,
@@ -1980,91 +1881,23 @@
       1
     );
 
-    /*
-     * ==================================================
-     * BLOC VERROUILLÉ 3 : RECTANGLE COPYRIGHT
-     * Ne pas modifier sans autorisation explicite.
-     * ==================================================
-     */
     if (copyrightRect) {
-      copyrightRect.setAttribute("x", "466.80795");
-      copyrightRect.setAttribute("y", "-2110");
-      copyrightRect.setAttribute("width", String(MOBILE_CONTENT_WIDTH));
-      copyrightRect.setAttribute("height", "19.127499");
+      copyrightRect.setAttribute("x", "14");
+      copyrightRect.setAttribute("y", "2110");
+      copyrightRect.setAttribute("width", "347.75");
+      copyrightRect.setAttribute("height", "19.127");
     }
 
     move(
-      wrappers.copyrightRect,
-      14 - 466.80795,
-      0,
-      1
-    );
-
-    /*
-     * TEXTE COPYRIGHT
-     */
-    move(
-      wrappers.copyrightText,
+      wrappers.copyright,
       20 - 568.279 * 0.95,
       2115 - 621.613 * 0.95,
       0.95
     );
   }
 
-  /*
-   * GESTION DU MODE D'AFFICHAGE
-   *
-   * Entrée en mode mobile à 600 px ou moins.
-   * Sortie du mode mobile uniquement au-delà de 700 px.
-   *
-   * Le défilement vertical ne déclenche aucun changement
-   * de mode : aucun gestionnaire scroll n'est utilisé.
-   */
-  let isMobile = window.innerWidth <= 600;
-
-  function applyLayout() {
-    if (isMobile) {
-      mobileLayout();
-    } else {
-      desktopLayout();
-    }
-  }
-
-  function handleResize() {
-    const width = window.innerWidth;
-
-    if (!isMobile && width <= 600) {
-      isMobile = true;
-      mobileLayout();
-      return;
-    }
-
-    if (isMobile && width > 700) {
-      isMobile = false;
-      desktopLayout();
-      return;
-    }
-
-    /*
-     * Si le mode mobile est déjà actif,
-     * on le conserve lors des variations de hauteur
-     * provoquées notamment par l'interface du navigateur.
-     */
-    if (isMobile) {
-      mobileLayout();
-    }
-  }
-
-  applyLayout();
-
-  window.addEventListener("resize", handleResize, {
-    passive: true
-  });
-
-  window.addEventListener("orientationchange", function () {
-    window.setTimeout(handleResize, 150);
-  });
-
+  layout();
+  window.addEventListener("resize", layout);
 })();
 ]]></script>
 </svg>
