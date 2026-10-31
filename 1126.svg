@@ -1739,129 +1739,201 @@
          id="tspan393">© Copyright AJIR Régénératif - Tous droits réservés - Reproduction interdite</tspan></tspan></text>
  <script type="application/ecmascript"><![CDATA[
 (function () {
+  "use strict";
+
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
   const mobileQuery = window.matchMedia("(max-width: 600px)");
+  const MOBILE_WIDTH = 376;
+  const PAGE_HEIGHT = 2200;
+  const ARTICLE_TOP = 150;
+  const ARTICLE_HEIGHT = 453.19;
+  const ARTICLE_GAP = 24;
+  const ARTICLE_IDS = ["g2", "g3", "g4", "g6"];
+  const ARTICLE_X = [14.113, 380.921, 744.839, 1105.648];
+  const ARTICLE_Y = [148.873, 148.873, 148.063, 148.063];
 
-  const articleIds = ["g2", "g3", "g4", "g6"];
-  const articleX = [14.113, 380.921, 744.839, 1105.648];
-  const articleY = [148.873, 148.873, 148.063, 148.063];
+  function get(id) {
+    const node = document.getElementById(id);
+    if (!node) throw new Error("Élément SVG introuvable : " + id);
+    return node;
+  }
 
-  const mobileWidth = 376;
-  const articleTop = 150;
-  const articleHeight = 453.190;
-  const articleGap = 24;
-  const pageHeight = 2250;
-
-  function makeWrapper(id, wrapperId) {
-    const element = document.getElementById(id);
-    if (!element) throw new Error("Élément absent : " + id);
-
-    if (element.parentElement.id === wrapperId) {
-      return { element, wrapper: element.parentElement };
+  function wrap(id, wrapperId) {
+    const element = get(id);
+    if (element.parentNode && element.parentNode.id === wrapperId) {
+      return { element: element, wrapper: element.parentNode };
     }
-
     const wrapper = document.createElementNS(NS, "g");
     wrapper.setAttribute("id", wrapperId);
     element.parentNode.insertBefore(wrapper, element);
     wrapper.appendChild(element);
-    return { element, wrapper };
+    return { element: element, wrapper: wrapper };
   }
 
-  const articles = articleIds.map((id, i) =>
-    makeWrapper(id, "responsive-" + id)
-  );
+  const articles = ARTICLE_IDS.map(function (id, i) {
+    return wrap(id, "responsive-" + id);
+  });
+  const banner = wrap("g1", "responsive-banner-background");
+  const copyrightBackground = wrap("g9", "responsive-copyright-background");
+  const logo = wrap("a1", "responsive-logo");
+  const title1 = wrap("text11", "responsive-text11");
+  const subtitle1 = wrap("text21", "responsive-text21");
+  const title2 = wrap("text15", "responsive-text15");
+  const subtitle2 = wrap("text16", "responsive-text16");
+  const home = wrap("a5", "responsive-home");
+  const copyrightText = wrap("text38", "responsive-copyright-text");
 
-  const logo = makeWrapper("a1", "responsive-logo");
-  const title1 = makeWrapper("text11", "responsive-text11");
-  const subtitle1 = makeWrapper("text21", "responsive-text21");
-  const title2 = makeWrapper("text15", "responsive-text15");
-  const subtitle2 = makeWrapper("text16", "responsive-text16");
-  const home = makeWrapper("a5", "responsive-home");
-  const copyrightText = makeWrapper("text38", "responsive-copyright-text");
-
-  const reference = document.getElementById("text41");
-  if (!reference) throw new Error("text41 introuvable");
-
-  const referenceSize = parseFloat(
-    reference.getAttribute("font-size") ||
-    getComputedStyle(reference).fontSize
-  );
-
-  const textItems = [
-    { item: title1, ratio: 1.25, x: 95, y: 48 },
-    { item: title2, ratio: 1.10, x: 230, y: 48 },
-    { item: subtitle1, ratio: 0.75, x: 95, y: 92 },
-    { item: subtitle2, ratio: 0.90, x: 230, y: 92 },
-    { item: copyrightText, ratio: 0.80, x: 20, y: 2200 }
+  const textEntries = [
+    { item: title1, ratio: 1.25, x: 91, y: 25 },
+    { item: title2, ratio: 1.10, x: 232, y: 25 },
+    { item: subtitle1, ratio: 0.75, x: 91, y: 79 },
+    { item: subtitle2, ratio: 0.90, x: 232, y: 79 },
+    { item: copyrightText, ratio: 0.80, x: 20, y: 2124 }
   ];
 
-  const originalFontSizes = textItems.map(item =>
-    item.item.element.getAttribute("style")
+  const original = {
+    viewBox: svg.getAttribute("viewBox"),
+    width: svg.getAttribute("width"),
+    height: svg.getAttribute("height"),
+    preserveAspectRatio: svg.getAttribute("preserveAspectRatio"),
+    svgStyle: svg.getAttribute("style"),
+    textStyles: textEntries.map(function (entry) {
+      return entry.item.element.getAttribute("style");
+    })
+  };
+
+  const referenceSize = parseFloat(
+    getComputedStyle(get("text41")).fontSize
   );
 
-  function setText(entry) {
-    const element = entry.item.element;
-    const wrapper = entry.item.wrapper;
-    element.style.fontSize = (referenceSize * entry.ratio) + "px";
-
+  function rootBox(element) {
     const box = element.getBBox();
-    wrapper.setAttribute(
-      "transform",
-      "translate(" + (entry.x - box.x) + " " +
-      (entry.y - box.y) + ")"
+    const matrix = element.getCTM();
+    const points = [
+      [box.x, box.y],
+      [box.x + box.width, box.y],
+      [box.x, box.y + box.height],
+      [box.x + box.width, box.y + box.height]
+    ].map(function (p) {
+      return new DOMPoint(p[0], p[1]).matrixTransform(matrix);
+    });
+    const xs = points.map(function (p) { return p.x; });
+    const ys = points.map(function (p) { return p.y; });
+    const minX = Math.min.apply(null, xs);
+    const minY = Math.min.apply(null, ys);
+    const maxX = Math.max.apply(null, xs);
+    const maxY = Math.max.apply(null, ys);
+    return { x: minX, y: minY, width: maxX - minX, height: maxY - minY };
+  }
+
+  function setRootMatrix(wrapper, rootMatrix) {
+    const parentMatrix = wrapper.parentNode.getCTM();
+    const localMatrix = parentMatrix.inverse().multiply(rootMatrix).multiply(parentMatrix);
+    wrapper.setAttribute("transform", "matrix(" +
+      [localMatrix.a, localMatrix.b, localMatrix.c, localMatrix.d,
+       localMatrix.e, localMatrix.f].join(" ") + ")");
+  }
+
+  function placeAndScale(item, x, y, sx, sy) {
+    const box = rootBox(item.element);
+    const matrix = new DOMMatrix()
+      .translate(x, y)
+      .scale(sx, sy)
+      .translate(-box.x, -box.y);
+    setRootMatrix(item.wrapper, matrix);
+  }
+
+  function placeText(entry) {
+    const element = entry.item.element;
+    element.style.fontSize = (referenceSize * entry.ratio) + "px";
+    const box = rootBox(element);
+    const dx = entry.x - box.x;
+    const dy = entry.y - box.y;
+    const parentMatrix = entry.item.wrapper.parentNode.getCTM();
+    const localDelta = new DOMPoint(dx, dy, 0, 0).matrixTransform(parentMatrix.inverse());
+    entry.item.wrapper.setAttribute(
+      "transform", "translate(" + localDelta.x + " " + localDelta.y + ")"
     );
+  }
+
+  function restoreAttribute(element, name, value) {
+    if (value === null) element.removeAttribute(name);
+    else element.setAttribute(name, value);
+  }
+
+  function desktopLayout() {
+    restoreAttribute(svg, "viewBox", original.viewBox || "0 0 1590 725");
+    restoreAttribute(svg, "width", original.width || "1590");
+    restoreAttribute(svg, "height", original.height || "725");
+    restoreAttribute(svg, "preserveAspectRatio", original.preserveAspectRatio);
+    restoreAttribute(svg, "style", original.svgStyle);
+
+    articles.concat([banner, copyrightBackground, logo, title1, subtitle1,
+      title2, subtitle2, home, copyrightText]).forEach(function (item) {
+      item.wrapper.removeAttribute("transform");
+    });
+
+    textEntries.forEach(function (entry, i) {
+      restoreAttribute(entry.item.element, "style", original.textStyles[i]);
+    });
+  }
+
+  function mobileLayout() {
+    svg.setAttribute("viewBox", "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT);
+    svg.setAttribute("preserveAspectRatio", "none");
+    svg.setAttribute("width", MOBILE_WIDTH);
+    svg.setAttribute("height", PAGE_HEIGHT);
+    svg.style.display = "block";
+    svg.style.width = "100vw";
+    svg.style.height = (window.innerWidth * PAGE_HEIGHT / MOBILE_WIDTH) + "px";
+    svg.style.maxWidth = "none";
+
+    articles.forEach(function (item, i) {
+      item.wrapper.setAttribute("transform",
+        "translate(" + (14.113 - ARTICLE_X[i]) + " " +
+        (ARTICLE_TOP + i * (ARTICLE_HEIGHT + ARTICLE_GAP) - ARTICLE_Y[i]) + ")");
+    });
+
+    // Le fond de l'en-tête est redimensionné sur toute la largeur mobile,
+    // sans toucher au rectangle original ni à son retournement vertical.
+    placeAndScale(banner, 14, 8, 348 / 1439.238, 1.15);
+
+    // Logo conservé et réduit proportionnellement.
+    const logoBox = rootBox(logo.element);
+    const logoScale = Math.min(0.72, 62 / logoBox.width, 82 / logoBox.height);
+    placeAndScale(logo, 16, 22, logoScale, logoScale);
+
+    textEntries.forEach(placeText);
+
+    // Lien d'accueil conservé en bas, juste avant le copyright.
+    const homeBox = rootBox(home.element);
+    const homeParent = home.wrapper.parentNode.getCTM();
+    const homeDelta = new DOMPoint(330 - homeBox.x, 2060 - homeBox.y, 0, 0)
+      .matrixTransform(homeParent.inverse());
+    home.wrapper.setAttribute("transform",
+      "translate(" + homeDelta.x + " " + homeDelta.y + ")");
+
+    // Le fond du copyright est ramené à la largeur de la page mobile.
+    placeAndScale(copyrightBackground, 14, 2118,
+      348 / 548.28284, 1.15);
   }
 
   function layout() {
-    if (!mobileQuery.matches) {
-      svg.setAttribute("viewBox", "0 0 1590 725");
-      svg.setAttribute("width", "1590");
-      svg.setAttribute("height", "725");
-      svg.style.width = "";
-      svg.style.height = "";
-
-      articles.forEach(item => item.wrapper.removeAttribute("transform"));
-      [logo, title1, subtitle1, title2, subtitle2, home, copyrightText]
-        .forEach(item => item.wrapper.removeAttribute("transform"));
-
-      textItems.forEach((entry, i) => {
-        if (originalFontSizes[i] === null) {
-          entry.item.element.removeAttribute("style");
-        } else {
-          entry.item.element.setAttribute("style", originalFontSizes[i]);
-        }
-      });
-      return;
-    }
-
-    svg.setAttribute("viewBox", "0 0 " + mobileWidth + " " + pageHeight);
-    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
-    svg.style.width = "100%";
-    svg.style.height = "auto";
-    svg.style.display = "block";
-
-    articles.forEach((item, i) => {
-      item.wrapper.setAttribute(
-        "transform",
-        "translate(" + (14.113 - articleX[i]) + " " +
-        (articleTop + i * (articleHeight + articleGap) - articleY[i]) + ")"
-      );
-    });
-
-    logo.wrapper.setAttribute("transform", "translate(-25 -43) scale(0.70)");
-    textItems.forEach(setText);
-
-    const homeBox = home.element.getBBox();
-    home.wrapper.setAttribute(
-      "transform",
-      "translate(" + (330 - homeBox.x) + " " +
-      (2150 - homeBox.y) + ")"
-    );
+    if (mobileQuery.matches) mobileLayout();
+    else desktopLayout();
   }
 
   layout();
   mobileQuery.addEventListener("change", layout);
+
+  let lastWidth = window.innerWidth;
+  window.addEventListener("resize", function () {
+    if (window.innerWidth !== lastWidth) {
+      lastWidth = window.innerWidth;
+      layout();
+    }
+  });
 })();
 ]]></script>
 </svg>
