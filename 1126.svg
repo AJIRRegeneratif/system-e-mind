@@ -1738,7 +1738,6 @@
          style="font-weight:300;font-family:'Leelawadee UI';-inkscape-font-specification:'Leelawadee UI Light'"
          id="tspan393">© Copyright AJIR Régénératif - Tous droits réservés - Reproduction interdite</tspan></tspan></text>
  <script type="application/ecmascript"><![CDATA[
-
 (function () {
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
@@ -1754,6 +1753,22 @@
     width:"1590",
     height:"725",
     viewBox:"0 0 1590 725"
+  };
+
+  // Coordonnées originales des rectangles :
+  // elles sont restaurées à l'identique en mode ordinateur.
+  const originalBanner = {
+    x:"14.124",
+    y:"-140.158",
+    width:"1439.238",
+    height:"92.063"
+  };
+
+  const originalCopyrightRect = {
+    x:"466.80795",
+    y:"-635.36621",
+    width:"548.28284",
+    height:"19.127499"
   };
 
   function wrap(id, wrapperId) {
@@ -1797,9 +1812,21 @@
     );
   }
 
+  function restoreRectangle(element, values) {
+    if (!element) return;
+
+    element.setAttribute("x", values.x);
+    element.setAttribute("y", values.y);
+    element.setAttribute("width", values.width);
+    element.setAttribute("height", values.height);
+  }
+
   function layout() {
     const isMobile = window.matchMedia("(max-width: 600px)").matches;
 
+    /*
+     * VERSION ORDINATEUR
+     */
     if (!isMobile) {
       svg.setAttribute("width", original.width);
       svg.setAttribute("height", original.height);
@@ -1813,26 +1840,16 @@
         if (w) w.removeAttribute("transform");
       });
 
-      if (banner) {
-        banner.setAttribute("x", "14.124");
-        banner.setAttribute("y", "48.095");
-        banner.setAttribute("width", "1439.238");
-        banner.setAttribute("height", "92.063");
-      }
-
-      if (copyrightRect) {
-        copyrightRect.setAttribute("x", "466.808");
-        copyrightRect.setAttribute("y", "616.239");
-        copyrightRect.setAttribute("width", "548.283");
-        copyrightRect.setAttribute("height", "19.127");
-      }
+      // Restauration exacte des rectangles d'origine.
+      restoreRectangle(banner, originalBanner);
+      restoreRectangle(copyrightRect, originalCopyrightRect);
 
       svg.removeAttribute("preserveAspectRatio");
       return;
     }
 
     /*
-     * DIMENSIONS ET CENTRAGE DU SVG MOBILE
+     * VERSION MOBILE
      */
     svg.setAttribute("width", "376");
     svg.setAttribute("height", "2160");
@@ -1845,6 +1862,7 @@
 
     /*
      * BANDEAU RECTANGLE
+     * Réglages mobiles conservés.
      */
     if (banner) {
       banner.setAttribute("x", "14.124");
@@ -1870,7 +1888,8 @@
     );
 
     /*
-     * BLOC VERROUILLÉ : EMPILEMENT DES ARTICLES
+     * BLOC VERROUILLÉ :
+     * EMPILEMENT DES QUATRE ARTICLES.
      * Ne pas modifier sans autorisation expresse.
      */
     const articleStart = 190;
@@ -1896,7 +1915,8 @@
     );
 
     /*
-     * RECTANGLE COPYRIGHT
+     * COPYRIGHT RECTANGLE
+     * Réglages mobiles conservés.
      */
     if (copyrightRect) {
       copyrightRect.setAttribute("x", "14");
@@ -1905,6 +1925,9 @@
       copyrightRect.setAttribute("height", "19.127");
     }
 
+    /*
+     * TEXTE COPYRIGHT
+     */
     move(
       wrappers.copyright,
       20 - 568.279 * 0.95,
