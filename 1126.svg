@@ -1934,7 +1934,16 @@
   }
 
   layout();
-  window.addEventListener("resize", layout);
+ let lastLayoutWidth = document.documentElement.clientWidth;
+
+window.addEventListener("resize", function () {
+  const newLayoutWidth = document.documentElement.clientWidth;
+
+  if (newLayoutWidth !== lastLayoutWidth) {
+    lastLayoutWidth = newLayoutWidth;
+    layout();
+  }
+});
 })();
 ]]></script>
 </svg>
