@@ -1334,7 +1334,8 @@
        sodipodi:nodetypes="cccc" />
   </a>
   <script
-     id="script1">(function () {
+     id="script1">
+    (function () {
   "use strict";
 
   const svg = document.documentElement;
@@ -1342,90 +1343,163 @@
   const mobileQuery = window.matchMedia("(max-width: 600px)");
 
   const MOBILE_WIDTH = 376;
-  const PAGE_HEIGHT = 1900;
+  const PAGE_HEIGHT = 820;
+
+  // Une seule carte est conservée.
+  const ARTICLE_IDS = ["g2"];
+  const ARTICLE_TOP = 150;
 
   function get(id) {
-    const el = document.getElementById(id);
-    if (!el) throw new Error("Élément SVG introuvable : " + id);
-    return el;
+    const element = document.getElementById(id);
+    if (!element) {
+      throw new Error("Élément SVG introuvable : " + id);
+    }
+    return element;
   }
 
   function wrap(id, wrapperId) {
     const element = get(id);
+
+    if (element.parentNode && element.parentNode.id === wrapperId) {
+      return {
+        element: element,
+        wrapper: element.parentNode
+      };
+    }
+
     const wrapper = document.createElementNS(NS, "g");
     wrapper.setAttribute("id", wrapperId);
+
     element.parentNode.insertBefore(wrapper, element);
     wrapper.appendChild(element);
-    return { element, wrapper };
+
+    return {
+      element: element,
+      wrapper: wrapper
+    };
   }
 
-  function rootBox(item) {
-    const wrapper = item.wrapper;
-    const previous = wrapper.getAttribute("transform");
+  function rootBox(element) {
+    const wrapper = element.parentNode;
+    const previousTransform = wrapper.getAttribute("transform");
+
     wrapper.removeAttribute("transform");
 
     try {
-      const b = item.element.getBBox();
-      const em = item.element.getCTM();
-      const pm = wrapper.parentNode.getCTM();
-      const m = pm.inverse().multiply(em);
+      const box = element.getBBox();
+      const elementMatrix = element.getCTM();
+      const parentMatrix = wrapper.parentNode.getCTM();
 
-      const points = [
-        [b.x, b.y],
-        [b.x + b.width, b.y],
-        [b.x, b.y + b.height],
-        [b.x + b.width, b.y + b.height]
-      ].map(([x, y]) => ({
-        x: m.a * x + m.c * y + m.e,
-        y: m.b * x + m.d * y + m.f
-      }));
+      if (!elementMatrix || !parentMatrix) {
+        throw new Error(
+          "Impossible de mesurer l'élément SVG : " + element.id
+        );
+      }
 
-      const xs = points.map(p => p.x);
-      const ys = points.map(p => p.y);
+      const matrix = parentMatrix.inverse().multiply(elementMatrix);
+
+      const corners = [
+        [box.x, box.y],
+        [box.x + box.width, box.y],
+        [box.x, box.y + box.height],
+        [box.x + box.width, box.y + box.height]
+      ].map(function (point) {
+        return {
+          x: matrix.a * point[0] + matrix.c * point[1] + matrix.e,
+          y: matrix.b * point[0] + matrix.d * point[1] + matrix.f
+        };
+      });
+
+      const xs = corners.map(function (point) {
+        return point.x;
+      });
+
+      const ys = corners.map(function (point) {
+        return point.y;
+      });
+
+      const minX = Math.min.apply(null, xs);
+      const minY = Math.min.apply(null, ys);
+      const maxX = Math.max.apply(null, xs);
+      const maxY = Math.max.apply(null, ys);
 
       return {
-        x: Math.min(...xs),
-        y: Math.min(...ys),
-        width: Math.max(...xs) - Math.min(...xs),
-        height: Math.max(...ys) - Math.min(...ys)
+        x: minX,
+        y: minY,
+        width: maxX - minX,
+        height: maxY - minY
       };
     } finally {
-      if (previous !== null) {
-        wrapper.setAttribute("transform", previous);
+      if (previousTransform !== null) {
+        wrapper.setAttribute("transform", previousTransform);
       }
     }
   }
 
   function translateTo(item, x, y) {
-    const b = rootBox(item);
+    const box = rootBox(item.element);
+
     item.wrapper.setAttribute(
       "transform",
-      "translate(" + (x - b.x) + " " + (y - b.y) + ")"
+      "translate(" +
+        (x - box.x) +
+        " " +
+        (y - box.y) +
+        ")"
     );
   }
 
   function scaleTo(item, x, y, width, height) {
-    const b = rootBox(item);
-    if (!b.width || !b.height) return;
+    const box = rootBox(item.element);
 
-    const sx = width / b.width;
-    const sy = height / b.height;
+    if (!box.width || !box.height) return;
+
+    const sx = width / box.width;
+    const sy = height / box.height;
 
     item.wrapper.setAttribute(
       "transform",
-      "matrix(" + sx + " 0 0 " + sy + " " +
-      (x - sx * b.x) + " " +
-      (y - sy * b.y) + ")"
+      "matrix(" +
+        sx + " 0 0 " + sy + " " +
+        (x - sx * box.x) + " " +
+        (y - sy * box.y) +
+      ")"
     );
   }
 
-  const banner = wrap("rect8", "responsive-banner");
-  const logo = wrap("g41", "responsive-logo");
-  const logoText = wrap("g2", "responsive-logo-text");
-  const bannerText = wrap("g3", "responsive-banner-text");
-  const home = wrap("a1", "responsive-home");
-  const content = wrap("g1", "responsive-content");
+  // Suppression des trois cartes non souhaitées.
+  ["g3", "g4", "g6"].forEach(function (id) {
+    const element = document.getElementById(id);
+    if (element) {
+      element.remove();
+    }
+  });
 
+  // Carte conservée.
+  const articles = ARTICLE_IDS.map(function (id) {
+    return wrap(id, "responsive-" + id);
+  });
+
+  // Éléments du bandeau et de l'habillage.
+  const banner = wrap("g1", "responsive-banner-background");
+  const logo = wrap("a1", "responsive-logo");
+
+  const title1 = wrap("text11", "responsive-text11");
+  const subtitle1 = wrap("text21", "responsive-text21");
+  const title2 = wrap("text15", "responsive-text15");
+  const subtitle2 = wrap("text16", "responsive-text16");
+
+  const home = wrap("a5", "responsive-home");
+  const copyrightBackground = wrap(
+    "g9",
+    "responsive-copyright-background"
+  );
+  const copyrightText = wrap(
+    "text38",
+    "responsive-copyright-text"
+  );
+
+  // Dimensions originales du SVG : elles sont restaurées sur ordinateur.
   const originalRoot = {
     viewBox: svg.getAttribute("viewBox"),
     width: svg.getAttribute("width"),
@@ -1434,62 +1508,71 @@
     style: svg.getAttribute("style")
   };
 
-  const originalAttributes = new Map();
-
-  const ids = [
-    "rect4", "rect40", "rect41", "rect43", "rect39",
-    "text39", "text41", "text43", "text38"
+  const textEntries = [
+    { item: title1, ratio: 1.25, x: 95, y: 25 },
+    { item: title2, ratio: 1.10, x: 230, y: 25 },
+    { item: subtitle1, ratio: 0.75, x: 95, y: 75 },
+    { item: subtitle2, ratio: 0.90, x: 230, y: 75 },
+    { item: copyrightText, ratio: 0.80, x: 20, y: 780 }
   ];
 
-  ids.forEach(id => {
-    const el = get(id);
-    ["x", "y", "width", "height", "transform", "style"]
-      .forEach(name => {
-        originalAttributes.set(
-          id + "|" + name,
-          el.getAttribute(name)
-        );
-      });
+  const originalTextStyles = textEntries.map(function (entry) {
+    return entry.item.element.getAttribute("style");
   });
 
-  const originalTexts = {};
-  ["text39", "text41", "text43", "text38"].forEach(id => {
-    const el = get(id);
-    originalTexts[id] = {
-      children: Array.from(el.childNodes).map(n => n.cloneNode(true)),
-      text: el.textContent.replace(/\s+/g, " ").trim()
-    };
-  });
+  const referenceSize = parseFloat(
+    getComputedStyle(get("text41")).fontSize
+  );
 
-  function restoreAttribute(el, name, value) {
-    if (value === null) el.removeAttribute(name);
-    else el.setAttribute(name, value);
+  if (!Number.isFinite(referenceSize) || referenceSize <= 0) {
+    throw new Error("Taille de référence text41 illisible");
   }
 
-  function restoreDesktop() {
-    Object.keys(originalRoot).forEach(name => {
-      restoreAttribute(svg, name, originalRoot[name]);
+  function setText(entry) {
+    entry.item.element.style.fontSize =
+      (referenceSize * entry.ratio) + "px";
+
+    translateTo(entry.item, entry.x, entry.y);
+  }
+
+  function restoreAttribute(element, name, value) {
+    if (value === null) {
+      element.removeAttribute(name);
+    } else {
+      element.setAttribute(name, value);
+    }
+  }
+
+  function desktopLayout() {
+    restoreAttribute(svg, "viewBox", originalRoot.viewBox);
+    restoreAttribute(svg, "width", originalRoot.width);
+    restoreAttribute(svg, "height", originalRoot.height);
+    restoreAttribute(
+      svg,
+      "preserveAspectRatio",
+      originalRoot.preserveAspectRatio
+    );
+    restoreAttribute(svg, "style", originalRoot.style);
+
+    articles.concat([
+      banner,
+      logo,
+      title1,
+      subtitle1,
+      title2,
+      subtitle2,
+      home,
+      copyrightBackground,
+      copyrightText
+    ]).forEach(function (item) {
+      item.wrapper.removeAttribute("transform");
     });
 
-    [banner, logo, logoText, bannerText, home, content]
-      .forEach(item => item.wrapper.removeAttribute("transform"));
-
-    ids.forEach(id => {
-      const el = get(id);
-
-      ["x", "y", "width", "height", "transform", "style"]
-        .forEach(name => {
-          restoreAttribute(
-            el,
-            name,
-            originalAttributes.get(id + "|" + name)
-          );
-        });
-    });
-
-    Object.keys(originalTexts).forEach(id => {
-      get(id).replaceChildren(
-        ...originalTexts[id].children.map(n => n.cloneNode(true))
+    textEntries.forEach(function (entry, index) {
+      restoreAttribute(
+        entry.item.element,
+        "style",
+        originalTextStyles[index]
       );
     });
   }
@@ -1499,14 +1582,25 @@
       "viewBox",
       "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT
     );
-    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+
+    svg.setAttribute(
+      "preserveAspectRatio",
+      "xMinYMin meet"
+    );
+
     svg.style.display = "block";
     svg.style.width = "100%";
     svg.style.height = "auto";
     svg.style.maxWidth = "100%";
 
-    // Bandeau.
-    const bannerBox = rootBox(banner);
+    // Carte unique : position mobile, sans déformation.
+    articles.forEach(function (item) {
+      translateTo(item, 14.113, ARTICLE_TOP);
+    });
+
+    // Bandeau : même méthode que dans le script précédent.
+    const bannerBox = rootBox(banner.element);
+
     scaleTo(
       banner,
       14,
@@ -1515,8 +1609,9 @@
       Math.max(1, bannerBox.height * 1.15)
     );
 
-    // Logo graphique.
-    const logoBox = rootBox(logo);
+    // Logo : réduction proportionnelle.
+    const logoBox = rootBox(logo.element);
+
     const logoScale = Math.min(
       0.72,
       62 / logoBox.width,
@@ -1531,116 +1626,37 @@
       logoBox.height * logoScale
     );
 
-    // Textes du bandeau.
-    translateTo(logoText, 85, 18);
-    logoText.wrapper.setAttribute(
-      "transform",
-      "translate(85 18) scale(.72)"
-    );
+    // Titres et sous-titres du bandeau.
+    textEntries.forEach(setText);
 
-    bannerText.wrapper.setAttribute(
-      "transform",
-      "translate(120 18) scale(.48)"
-    );
+    // Icône d'accueil sous l'article.
+    translateTo(home, 330, 700);
 
-    // Fond du panneau principal.
-    const panel = get("rect4");
-    panel.setAttribute("x", "14");
-    panel.setAttribute("y", "148");
-    panel.setAttribute("width", "348");
-    panel.setAttribute("height", "1640");
+    // Fond et texte du pied de page.
+    const copyrightBox = rootBox(copyrightBackground.element);
 
-    // Titre.
-    const titleRect = get("rect40");
-    titleRect.setAttribute("x", "0");
-    titleRect.setAttribute("y", "0");
-    titleRect.setAttribute("width", "338");
-    titleRect.setAttribute("height", "75");
-
-    const title = get("text39");
-    title.setAttribute("transform", "translate(19 165)");
-    title.setAttribute("style",
-      "font-size:18.6667px;line-height:1.25;font-family:Arial;" +
-      "white-space:normal;text-align:start;fill:#ffffff;stroke:none"
-    );
-    title.replaceChildren(document.createTextNode(originalTexts.text39.text));
-
-    // Texte principal : largeur et hauteur déterminées au préalable.
-    const bodyRect = get("rect41");
-    bodyRect.setAttribute("x", "0");
-    bodyRect.setAttribute("y", "0");
-    bodyRect.setAttribute("width", "338");
-    bodyRect.setAttribute("height", "1517");
-
-    const body = get("text41");
-    body.setAttribute("transform", "translate(19 245)");
-    body.setAttribute("style",
-      "font-size:13.3333px;line-height:1.25;font-family:Arial;" +
-      "white-space:normal;text-align:justify;fill:#ffffff;stroke:none"
-    );
-    body.replaceChildren(document.createTextNode(originalTexts.text41.text));
-
-    // Référence.
-    const sourceY = 245 + 1517 + 20;
-
-    const sourceRect = get("rect43");
-    sourceRect.setAttribute("x", "0");
-    sourceRect.setAttribute("y", "0");
-    sourceRect.setAttribute("width", "338");
-    sourceRect.setAttribute("height", "40");
-
-    const source = get("text43");
-    source.setAttribute(
-      "transform",
-      "translate(19 " + sourceY + ")"
-    );
-    source.setAttribute("style",
-      "font-size:10.6667px;line-height:1.15;font-family:Arial;" +
-      "white-space:normal;text-align:start;fill:#ffffff;stroke:none"
-    );
-    source.replaceChildren(document.createTextNode(originalTexts.text43.text));
-
-    // Copyright.
-    const copyrightY = sourceY + 45;
-
-    const copyrightRect = get("rect39");
-    copyrightRect.setAttribute("x", "0");
-    copyrightRect.setAttribute("y", "0");
-    copyrightRect.setAttribute("width", "338");
-    copyrightRect.setAttribute("height", "35");
-
-    const copyright = get("text38");
-    copyright.setAttribute(
-      "transform",
-      "translate(19 " + copyrightY + ")"
-    );
-    copyright.setAttribute("style",
-      "font-size:10.6667px;line-height:1.2;font-family:Arial;" +
-      "white-space:normal;text-align:start;fill:#ffffff;stroke:none"
-    );
-    copyright.replaceChildren(
-      document.createTextNode(originalTexts.text38.text)
-    );
-
-    // Position du lien d'accueil.
-    translateTo(home, 330, 1780);
-
-    svg.setAttribute(
-      "viewBox",
-      "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT
+    scaleTo(
+      copyrightBackground,
+      14,
+      755,
+      348,
+      Math.max(16, copyrightBox.height * 1.15)
     );
   }
 
   function layout() {
-    if (mobileQuery.matches) mobileLayout();
-    else restoreDesktop();
+    if (mobileQuery.matches) {
+      mobileLayout();
+    } else {
+      desktopLayout();
+    }
   }
 
   layout();
 
   if (typeof mobileQuery.addEventListener === "function") {
     mobileQuery.addEventListener("change", layout);
-  } else {
+  } else if (typeof mobileQuery.addListener === "function") {
     mobileQuery.addListener(layout);
   }
 
