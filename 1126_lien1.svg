@@ -1333,8 +1333,8 @@
        id="path4"
        sodipodi:nodetypes="cccc" />
   </a>
-  <script
-     id="script1">(function () {
+  <script type="text/ecmascript"><![CDATA[
+(function () {
   "use strict";
 
   const svg = document.documentElement;
@@ -1361,35 +1361,49 @@
 
   function get(id) {
     const el = document.getElementById(id);
-    if (!el) throw new Error("Élément introuvable : " + id);
+    if (!el) {
+      throw new Error("Élément introuvable : " + id);
+    }
     return el;
   }
 
   function saveAttrs(el, names) {
     const result = {};
-    names.forEach(name => result[name] = el.getAttribute(name));
+    names.forEach(name => {
+      result[name] = el.getAttribute(name);
+    });
     return result;
   }
 
   function restoreAttrs(el, saved) {
     Object.keys(saved).forEach(name => {
-      if (saved[name] === null) el.removeAttribute(name);
-      else el.setAttribute(name, saved[name]);
+      if (saved[name] === null) {
+        el.removeAttribute(name);
+      } else {
+        el.setAttribute(name, saved[name]);
+      }
     });
   }
 
   function wrap(el, id) {
     if (el.parentNode.id === id) {
-      return { element: el, wrapper: el.parentNode };
+      return {
+        element: el,
+        wrapper: el.parentNode
+      };
     }
 
     const parent = el.parentNode;
     const wrapper = document.createElementNS(NS, "g");
+
     wrapper.setAttribute("id", id);
     parent.insertBefore(wrapper, el);
     wrapper.appendChild(el);
 
-    return { element: el, wrapper: wrapper };
+    return {
+      element: el,
+      wrapper: wrapper
+    };
   }
 
   function boxInParent(el) {
@@ -1397,9 +1411,12 @@
     const m = el.getCTM();
     const p = el.parentNode.getCTM();
 
-    if (!m || !p) throw new Error("Mesure SVG impossible : " + el.id);
+    if (!m || !p) {
+      throw new Error("Mesure SVG impossible : " + el.id);
+    }
 
     const matrix = p.inverse().multiply(m);
+
     const pts = [
       [b.x, b.y],
       [b.x + b.width, b.y],
@@ -1423,23 +1440,34 @@
 
   function moveTo(item, x, y) {
     const b = boxInParent(item.element);
+
     item.wrapper.setAttribute(
       "transform",
-      "translate(" + (x - b.x) + " " + (y - b.y) + ")"
+      "translate(" +
+        (x - b.x) +
+        " " +
+        (y - b.y) +
+        ")"
     );
   }
 
   function scaleTo(item, x, y, width, height) {
     const b = boxInParent(item.element);
-    if (!b.width || !b.height) return;
+
+    if (!b.width || !b.height) {
+      return;
+    }
 
     const sx = width / b.width;
     const sy = height / b.height;
 
     item.wrapper.setAttribute(
       "transform",
-      "matrix(" + sx + " 0 0 " + sy + " " +
-      (x - sx * b.x) + " " + (y - sy * b.y) + ")"
+      "matrix(" +
+        sx + " 0 0 " + sy + " " +
+        (x - sx * b.x) + " " +
+        (y - sy * b.y) +
+      ")"
     );
   }
 
@@ -1465,22 +1493,32 @@
     "x", "y", "width", "height"
   ]);
 
-  const textElements = [textTitle, textBody, textSource, copyright];
+  const textElements = [
+    textTitle,
+    textBody,
+    textSource,
+    copyright
+  ];
 
   const originalText = textElements.map(el => ({
     transform: el.getAttribute("transform"),
     style: el.getAttribute("style"),
-    children: Array.from(el.childNodes).map(node => node.cloneNode(true))
+    children: Array.from(el.childNodes).map(node =>
+      node.cloneNode(true)
+    )
   }));
 
   const originalTransforms = [
-    article, banner, bannerText1, bannerText2, logo, home
-  ].map(item => item.wrapper.getAttribute("transform"));
+    article,
+    banner,
+    bannerText1,
+    bannerText2,
+    logo,
+    home
+  ].map(item =>
+    item.wrapper.getAttribute("transform")
+  );
 
-  /*
-   * Recomposition du texte de l'article.
-   * Les paragraphes vides sont conservés.
-   */
   const originalBodyNodes = Array.from(textBody.childNodes)
     .map(node => node.cloneNode(true));
 
@@ -1505,14 +1543,19 @@
       }
     });
 
-    if (current.trim()) paragraphs.push(current.trim());
+    if (current.trim()) {
+      paragraphs.push(current.trim());
+    }
+
     return paragraphs;
   }
 
   function measureText(text, font) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
+
     ctx.font = font;
+
     return ctx.measureText(text).width;
   }
 
@@ -1532,7 +1575,10 @@
       }
     });
 
-    if (line) lines.push(line);
+    if (line) {
+      lines.push(line);
+    }
+
     return lines;
   }
 
@@ -1549,16 +1595,25 @@
     let first = true;
 
     paragraphs.forEach(paragraph => {
-      if (!first) y += LINE_HEIGHT;
+      if (!first) {
+        y += LINE_HEIGHT;
+      }
+
       first = false;
 
-      const lines = wrapParagraph(paragraph, TEXT_WIDTH, font);
+      const lines = wrapParagraph(
+        paragraph,
+        TEXT_WIDTH,
+        font
+      );
 
       lines.forEach(line => {
         const span = document.createElementNS(NS, "tspan");
+
         span.setAttribute("x", TEXT_X);
         span.setAttribute("y", y);
         span.textContent = line;
+
         textBody.appendChild(span);
         y += LINE_HEIGHT;
       });
@@ -1575,22 +1630,37 @@
   }
 
   function mobileLayout() {
-    svg.setAttribute("viewBox", "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT);
-    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+    svg.setAttribute(
+      "viewBox",
+      "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT
+    );
+
+    svg.setAttribute(
+      "preserveAspectRatio",
+      "xMinYMin meet"
+    );
+
     svg.style.display = "block";
     svg.style.width = "100%";
     svg.style.height = "auto";
     svg.style.maxWidth = "100%";
 
     /* Bandeau */
-    scaleTo(banner, ARTICLE_X, 8, ARTICLE_WIDTH, 22);
+    scaleTo(
+      banner,
+      ARTICLE_X,
+      8,
+      ARTICLE_WIDTH,
+      22
+    );
 
-    /* Textes du bandeau : les groupes conservent leurs positions internes. */
+    /* Textes du bandeau */
     moveTo(bannerText1, 0, 0);
     moveTo(bannerText2, 0, 0);
 
     /* Logo */
     const logoBox = boxInParent(logo.element);
+
     const logoScale = Math.min(
       0.72,
       62 / Math.max(1, logoBox.width),
@@ -1614,37 +1684,61 @@
     rect4.setAttribute("height", "auto");
 
     /* Titre */
-    textTitle.setAttribute("transform", "translate(5 28)");
+    textTitle.setAttribute(
+      "transform",
+      "translate(5 28)"
+    );
+
     textTitle.style.fontSize = "18px";
     textTitle.style.textAlign = "start";
 
-    /* Corps : largeur de texte 338 */
+    /* Corps de l'article */
     reflowBody();
 
     /* Source */
-    textSource.setAttribute("transform", "translate(5 0)");
+    textSource.setAttribute(
+      "transform",
+      "translate(5 0)"
+    );
+
     textSource.style.fontSize = "10.6667px";
     textSource.style.textAlign = "start";
 
-    /* Copyright déjà présent dans g1 */
-    copyright.setAttribute("transform", "translate(5 0)");
+    /* Copyright */
+    copyright.setAttribute(
+      "transform",
+      "translate(5 0)"
+    );
+
     copyright.style.fontSize = "10.6667px";
     copyright.style.textAlign = "start";
 
     /* Bouton retour */
-    moveTo(home, 330, PAGE_HEIGHT - 55);
+    moveTo(
+      home,
+      330,
+      PAGE_HEIGHT - 55
+    );
   }
 
   function desktopLayout() {
     restoreAttrs(svg, original);
 
     [
-      article, banner, bannerText1, bannerText2, logo, home
+      article,
+      banner,
+      bannerText1,
+      bannerText2,
+      logo,
+      home
     ].forEach((item, i) => {
       if (originalTransforms[i] === null) {
         item.wrapper.removeAttribute("transform");
       } else {
-        item.wrapper.setAttribute("transform", originalTransforms[i]);
+        item.wrapper.setAttribute(
+          "transform",
+          originalTransforms[i]
+        );
       }
     });
 
@@ -1654,20 +1748,37 @@
     textElements.forEach((el, i) => {
       const saved = originalText[i];
 
-      if (saved.transform === null) el.removeAttribute("transform");
-      else el.setAttribute("transform", saved.transform);
+      if (saved.transform === null) {
+        el.removeAttribute("transform");
+      } else {
+        el.setAttribute(
+          "transform",
+          saved.transform
+        );
+      }
 
-      if (saved.style === null) el.removeAttribute("style");
-      else el.setAttribute("style", saved.style);
+      if (saved.style === null) {
+        el.removeAttribute("style");
+      } else {
+        el.setAttribute("style", saved.style);
+      }
 
-      while (el.firstChild) el.removeChild(el.firstChild);
-      saved.children.forEach(node => el.appendChild(node.cloneNode(true)));
+      while (el.firstChild) {
+        el.removeChild(el.firstChild);
+      }
+
+      saved.children.forEach(node => {
+        el.appendChild(node.cloneNode(true));
+      });
     });
   }
 
   function layout() {
-    if (mobileQuery.matches) mobileLayout();
-    else desktopLayout();
+    if (mobileQuery.matches) {
+      mobileLayout();
+    } else {
+      desktopLayout();
+    }
   }
 
   layout();
@@ -1679,6 +1790,7 @@
   }
 
   window.addEventListener("resize", layout);
+
 })();
-})();</script>
+]]></script>
 </svg>
