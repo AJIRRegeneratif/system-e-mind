@@ -1934,13 +1934,7 @@
   }
 
   layout();
-  const mobileQuery = window.matchMedia("(max-width: 600px)");
-
-if (mobileQuery.addEventListener) {
-  mobileQuery.addEventListener("change", layout);
-} else {
-  mobileQuery.addListener(layout);
-}
+  window.addEventListener("resize", layout);
 })();
 ]]></script>
 </svg>
