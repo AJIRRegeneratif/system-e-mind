@@ -1741,86 +1741,71 @@
 (function () {
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
-
-  const original = {
-    viewBox: "0 0 1590 725",
-    rect8: { x: 14.124, y: 48.095, width: 1439.238, height: 92.063 },
-    rect38: { x: 466.808, y: 616.239, width: 548.283, height: 19.127 }
-  };
+  const mobileQuery = window.matchMedia("(max-width: 600px)");
 
   const articleIds = ["g2", "g3", "g4", "g6"];
   const articleX = [14.113, 380.921, 744.839, 1105.648];
   const articleY = [148.873, 148.873, 148.063, 148.063];
-  const articleHeight = 453.190;
-  const articleWidth = 348.428;
 
   const mobileWidth = 376;
-  const headerHeight = 130;
   const articleTop = 150;
+  const articleHeight = 453.190;
   const articleGap = 24;
-  const homeY = 2040;
-  const copyrightY = 2100;
-  const pageHeight = 2150;
+  const pageHeight = 2250;
 
-  function wrap(id, wrapperId) {
-    const el = document.getElementById(id);
-    if (!el || !el.parentNode) {
-      throw new Error("Élément SVG introuvable : " + id);
+  function makeWrapper(id, wrapperId) {
+    const element = document.getElementById(id);
+    if (!element) throw new Error("Élément absent : " + id);
+
+    if (element.parentElement.id === wrapperId) {
+      return { element, wrapper: element.parentElement };
     }
 
     const wrapper = document.createElementNS(NS, "g");
     wrapper.setAttribute("id", wrapperId);
-    el.parentNode.insertBefore(wrapper, el);
-    wrapper.appendChild(el);
-    return { element: el, wrapper: wrapper };
+    element.parentNode.insertBefore(wrapper, element);
+    wrapper.appendChild(element);
+    return { element, wrapper };
   }
 
-  const articles = articleIds.map((id, i) => wrap(id, "responsive-" + id));
-
-  const background = wrap("rect8", "responsive-banner-background");
-  const logo = wrap("a1", "responsive-logo");
-  const text11 = wrap("text11", "responsive-text11");
-  const text21 = wrap("text21", "responsive-text21");
-  const text15 = wrap("text15", "responsive-text15");
-  const text16 = wrap("text16", "responsive-text16");
-  const home = wrap("a5", "responsive-home");
-  const copyrightBackground = wrap("rect38", "responsive-copyright-background");
-  const copyrightText = wrap("text38", "responsive-copyright-text");
-
-  const reference = document.getElementById("text41");
-
-  if (!reference) {
-    throw new Error("Texte de référence text41 introuvable.");
-  }
-
-  const referenceSize = parseFloat(
-    window.getComputedStyle(reference).fontSize
+  const articles = articleIds.map((id, i) =>
+    makeWrapper(id, "responsive-" + id)
   );
 
-  if (!referenceSize || !isFinite(referenceSize)) {
-    throw new Error("Impossible de déterminer la taille de text41.");
-  }
+  const logo = makeWrapper("a1", "responsive-logo");
+  const title1 = makeWrapper("text11", "responsive-text11");
+  const subtitle1 = makeWrapper("text21", "responsive-text21");
+  const title2 = makeWrapper("text15", "responsive-text15");
+  const subtitle2 = makeWrapper("text16", "responsive-text16");
+  const home = makeWrapper("a5", "responsive-home");
+  const copyrightText = makeWrapper("text38", "responsive-copyright-text");
+
+  const reference = document.getElementById("text41");
+  if (!reference) throw new Error("text41 introuvable");
+
+  const referenceSize = parseFloat(
+    reference.getAttribute("font-size") ||
+    getComputedStyle(reference).fontSize
+  );
 
   const textItems = [
-    { item: text11, ratio: 1.25, x: 90, y: 43 },
-    { item: text15, ratio: 1.10, x: 235, y: 43 },
-    { item: text21, ratio: 0.75, x: 90, y: 94 },
-    { item: text16, ratio: 0.90, x: 235, y: 94 },
-    { item: copyrightText, ratio: 0.80, x: 20, y: 2119 }
+    { item: title1, ratio: 1.25, x: 95, y: 48 },
+    { item: title2, ratio: 1.10, x: 230, y: 48 },
+    { item: subtitle1, ratio: 0.75, x: 95, y: 92 },
+    { item: subtitle2, ratio: 0.90, x: 230, y: 92 },
+    { item: copyrightText, ratio: 0.80, x: 20, y: 2200 }
   ];
 
-  const savedFontStyles = textItems.map(function (entry) {
-    return entry.item.element.style.fontSize;
-  });
+  const originalFontSizes = textItems.map(item =>
+    item.item.element.getAttribute("style")
+  );
 
-  function positionText(entry) {
+  function setText(entry) {
     const element = entry.item.element;
     const wrapper = entry.item.wrapper;
-
     element.style.fontSize = (referenceSize * entry.ratio) + "px";
 
     const box = element.getBBox();
-
     wrapper.setAttribute(
       "transform",
       "translate(" + (entry.x - box.x) + " " +
@@ -1829,42 +1814,24 @@
   }
 
   function layout() {
-    const mobile = window.matchMedia("(max-width: 600px)").matches;
-
-    if (!mobile) {
-      svg.setAttribute("viewBox", original.viewBox);
+    if (!mobileQuery.matches) {
+      svg.setAttribute("viewBox", "0 0 1590 725");
       svg.setAttribute("width", "1590");
       svg.setAttribute("height", "725");
-      svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
       svg.style.width = "";
       svg.style.height = "";
-      svg.style.maxWidth = "";
 
-      articles.forEach(function (item) {
-        item.wrapper.removeAttribute("transform");
+      articles.forEach(item => item.wrapper.removeAttribute("transform"));
+      [logo, title1, subtitle1, title2, subtitle2, home, copyrightText]
+        .forEach(item => item.wrapper.removeAttribute("transform"));
+
+      textItems.forEach((entry, i) => {
+        if (originalFontSizes[i] === null) {
+          entry.item.element.removeAttribute("style");
+        } else {
+          entry.item.element.setAttribute("style", originalFontSizes[i]);
+        }
       });
-
-      [
-        background, logo, text11, text21, text15, text16,
-        home, copyrightBackground, copyrightText
-      ].forEach(function (item) {
-        item.wrapper.removeAttribute("transform");
-      });
-
-      textItems.forEach(function (entry, i) {
-        entry.item.element.style.fontSize = savedFontStyles[i];
-      });
-
-      const r8 = background.element;
-      Object.keys(original.rect8).forEach(k =>
-        r8.setAttribute(k, original.rect8[k])
-      );
-
-      const r38 = copyrightBackground.element;
-      Object.keys(original.rect38).forEach(k =>
-        r38.setAttribute(k, original.rect38[k])
-      );
-
       return;
     }
 
@@ -1872,26 +1839,9 @@
     svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
     svg.style.width = "100%";
     svg.style.height = "auto";
-    svg.style.maxWidth = "100%";
     svg.style.display = "block";
 
-    const r8 = background.element;
-    r8.setAttribute("x", "0");
-    r8.setAttribute("y", "0");
-    r8.setAttribute("width", mobileWidth);
-    r8.setAttribute("height", headerHeight);
-
-    const r38 = copyrightBackground.element;
-    r38.setAttribute("x", "14");
-    r38.setAttribute("y", copyrightY);
-    r38.setAttribute("width", "348");
-    r38.setAttribute("height", "32");
-
-    logo.wrapper.setAttribute("transform", "translate(-25 -43) scale(0.70)");
-
-    textItems.forEach(positionText);
-
-    articles.forEach(function (item, i) {
+    articles.forEach((item, i) => {
       item.wrapper.setAttribute(
         "transform",
         "translate(" + (14.113 - articleX[i]) + " " +
@@ -1899,21 +1849,19 @@
       );
     });
 
+    logo.wrapper.setAttribute("transform", "translate(-25 -43) scale(0.70)");
+    textItems.forEach(setText);
+
     const homeBox = home.element.getBBox();
     home.wrapper.setAttribute(
       "transform",
       "translate(" + (330 - homeBox.x) + " " +
-      (homeY - homeBox.y) + ")"
+      (2150 - homeBox.y) + ")"
     );
   }
 
   layout();
-
-  let resizeTimer;
-  window.addEventListener("resize", function () {
-    clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(layout, 150);
-  });
+  mobileQuery.addEventListener("change", layout);
 })();
 ]]></script>
 </svg>
