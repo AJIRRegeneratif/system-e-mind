@@ -1334,8 +1334,7 @@
        sodipodi:nodetypes="cccc" />
   </a>
   <script
-     id="script1">
-    (function () {
+     id="script1">(function () {
   "use strict";
 
   const svg = document.documentElement;
