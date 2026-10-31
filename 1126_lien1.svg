@@ -1342,11 +1342,12 @@
   const mobileQuery = window.matchMedia("(max-width: 600px)");
 
   const MOBILE_WIDTH = 376;
-  const PAGE_HEIGHT = 820;
-
-  // Une seule carte est conservée.
-  const ARTICLE_IDS = ["g2"];
+  const PAGE_HEIGHT = 2250;
   const ARTICLE_TOP = 150;
+
+  const ARTICLE_X = 14.113;
+  const ARTICLE_WIDTH = 348;
+  const TEXT_WIDTH = 338;
 
   function get(id) {
     const element = document.getElementById(id);
@@ -1359,7 +1360,10 @@
   function wrap(id, wrapperId) {
     const element = get(id);
 
-    if (element.parentNode && element.parentNode.id === wrapperId) {
+    if (
+      element.parentNode &&
+      element.parentNode.getAttribute("id") === wrapperId
+    ) {
       return {
         element: element,
         wrapper: element.parentNode
@@ -1378,6 +1382,7 @@
     };
   }
 
+  // Mesure dans le repère du SVG racine.
   function rootBox(element) {
     const wrapper = element.parentNode;
     const previousTransform = wrapper.getAttribute("transform");
@@ -1391,7 +1396,7 @@
 
       if (!elementMatrix || !parentMatrix) {
         throw new Error(
-          "Impossible de mesurer l'élément SVG : " + element.id
+          "Impossible de mesurer l'élément SVG : " + element.getAttribute("id")
         );
       }
 
@@ -1441,10 +1446,9 @@
     item.wrapper.setAttribute(
       "transform",
       "translate(" +
-        (x - box.x) +
-        " " +
+        (x - box.x) + " " +
         (y - box.y) +
-        ")"
+      ")"
     );
   }
 
@@ -1466,39 +1470,38 @@
     );
   }
 
-  // Suppression des trois cartes non souhaitées.
-  ["g3", "g4", "g6"].forEach(function (id) {
-    const element = document.getElementById(id);
-    if (element) {
-      element.remove();
-    }
-  });
+  // Éléments du nouveau fichier 1126_lien1.svg.
+  const article = wrap("g1", "responsive-article");
 
-  // Carte conservée.
-  const articles = ARTICLE_IDS.map(function (id) {
-    return wrap(id, "responsive-" + id);
-  });
+  const banner = wrap("rect8", "responsive-banner-background");
 
-  // Éléments du bandeau et de l'habillage.
-  const banner = wrap("g1", "responsive-banner-background");
-  const logo = wrap("a1", "responsive-logo");
+  const logo = wrap("g41", "responsive-logo");
 
   const title1 = wrap("text11", "responsive-text11");
   const subtitle1 = wrap("text21", "responsive-text21");
+
   const title2 = wrap("text15", "responsive-text15");
   const subtitle2 = wrap("text16", "responsive-text16");
 
-  const home = wrap("a5", "responsive-home");
-  const copyrightBackground = wrap(
-    "g9",
-    "responsive-copyright-background"
-  );
-  const copyrightText = wrap(
-    "text38",
-    "responsive-copyright-text"
-  );
+  // Zones de texte définies dans les éléments defs du SVG.
+  const articleBackground = get("rect4");
+  const articleTextArea = get("rect41");
 
-  // Dimensions originales du SVG : elles sont restaurées sur ordinateur.
+  const originalRect4 = {
+    x: articleBackground.getAttribute("x"),
+    y: articleBackground.getAttribute("y"),
+    width: articleBackground.getAttribute("width"),
+    height: articleBackground.getAttribute("height")
+  };
+
+  const originalRect41 = {
+    x: articleTextArea.getAttribute("x"),
+    y: articleTextArea.getAttribute("y"),
+    width: articleTextArea.getAttribute("width"),
+    height: articleTextArea.getAttribute("height")
+  };
+
+  // État initial du SVG.
   const originalRoot = {
     viewBox: svg.getAttribute("viewBox"),
     width: svg.getAttribute("width"),
@@ -1507,12 +1510,12 @@
     style: svg.getAttribute("style")
   };
 
+  // Textes du bandeau : mêmes proportions que dans le script précédent.
   const textEntries = [
     { item: title1, ratio: 1.25, x: 95, y: 25 },
     { item: title2, ratio: 1.10, x: 230, y: 25 },
     { item: subtitle1, ratio: 0.75, x: 95, y: 75 },
-    { item: subtitle2, ratio: 0.90, x: 230, y: 75 },
-    { item: copyrightText, ratio: 0.80, x: 20, y: 780 }
+    { item: subtitle2, ratio: 0.90, x: 230, y: 75 }
   ];
 
   const originalTextStyles = textEntries.map(function (entry) {
@@ -1546,34 +1549,38 @@
     restoreAttribute(svg, "viewBox", originalRoot.viewBox);
     restoreAttribute(svg, "width", originalRoot.width);
     restoreAttribute(svg, "height", originalRoot.height);
+
     restoreAttribute(
       svg,
       "preserveAspectRatio",
       originalRoot.preserveAspectRatio
     );
+
     restoreAttribute(svg, "style", originalRoot.style);
 
-    articles.concat([
-      banner,
-      logo,
-      title1,
-      subtitle1,
-      title2,
-      subtitle2,
-      home,
-      copyrightBackground,
-      copyrightText
-    ]).forEach(function (item) {
-      item.wrapper.removeAttribute("transform");
-    });
+    article.wrapper.removeAttribute("transform");
+    banner.wrapper.removeAttribute("transform");
+    logo.wrapper.removeAttribute("transform");
 
     textEntries.forEach(function (entry, index) {
+      entry.item.wrapper.removeAttribute("transform");
+
       restoreAttribute(
         entry.item.element,
         "style",
         originalTextStyles[index]
       );
     });
+
+    articleBackground.setAttribute("x", originalRect4.x);
+    articleBackground.setAttribute("y", originalRect4.y);
+    articleBackground.setAttribute("width", originalRect4.width);
+    articleBackground.setAttribute("height", originalRect4.height);
+
+    articleTextArea.setAttribute("x", originalRect41.x);
+    articleTextArea.setAttribute("y", originalRect41.y);
+    articleTextArea.setAttribute("width", originalRect41.width);
+    articleTextArea.setAttribute("height", originalRect41.height);
   }
 
   function mobileLayout() {
@@ -1592,12 +1599,7 @@
     svg.style.height = "auto";
     svg.style.maxWidth = "100%";
 
-    // Carte unique : position mobile, sans déformation.
-    articles.forEach(function (item) {
-      translateTo(item, 14.113, ARTICLE_TOP);
-    });
-
-    // Bandeau : même méthode que dans le script précédent.
+    // Bandeau : même redimensionnement que dans le script 1126.svg.
     const bannerBox = rootBox(banner.element);
 
     scaleTo(
@@ -1608,7 +1610,7 @@
       Math.max(1, bannerBox.height * 1.15)
     );
 
-    // Logo : réduction proportionnelle.
+    // Logo : réduction proportionnelle, sans déformation.
     const logoBox = rootBox(logo.element);
 
     const logoScale = Math.min(
@@ -1625,22 +1627,17 @@
       logoBox.height * logoScale
     );
 
-    // Titres et sous-titres du bandeau.
+    // Textes du bandeau.
     textEntries.forEach(setText);
 
-    // Icône d'accueil sous l'article.
-    translateTo(home, 330, 700);
+    // Bloc article : même position que l'ancien g2.
+    articleBackground.setAttribute("width", ARTICLE_WIDTH);
 
-    // Fond et texte du pied de page.
-    const copyrightBox = rootBox(copyrightBackground.element);
+    // Zone de texte légèrement plus étroite que le rectangle.
+    articleTextArea.setAttribute("width", TEXT_WIDTH);
 
-    scaleTo(
-      copyrightBackground,
-      14,
-      755,
-      348,
-      Math.max(16, copyrightBox.height * 1.15)
-    );
+    // Le bloc est déplacé sans réduire la taille de ses caractères.
+    translateTo(article, ARTICLE_X, ARTICLE_TOP);
   }
 
   function layout() {
