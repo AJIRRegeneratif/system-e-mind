@@ -1741,87 +1741,52 @@
 (function () {
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
+  const ids = ["g2", "g3", "g4", "g6"];
+  const xs = [14.113, 380.921, 744.839, 1105.648];
+  const top = 148.873;
+  const width = 348.428;
+  const height = 453.190;
+  const gap = 24;
+  const mobileViewWidth = 376;
+  const mobileTop = 20;
 
-  const articles = ["g2", "g3", "g4", "g6"];
-  const originalViewBox = "0 0 1590 725";
+  const wrappers = [];
 
-  const mobileStyle = document.createElementNS(NS, "style");
-  mobileStyle.textContent = `
-    @media (max-width: 600px) {
-      svg {
-        width: 100vw !important;
-        height: auto !important;
-      }
-    }
-  `;
-  svg.insertBefore(mobileStyle, svg.firstChild);
-
-  const wrappers = {};
-
-  articles.forEach(function (id) {
-    const element = document.getElementById(id);
-    if (!element || !element.parentNode) return;
-
-    const parent = element.parentNode;
+  ids.forEach(function(id, i) {
+    const el = document.getElementById(id);
     const wrapper = document.createElementNS(NS, "g");
-    wrapper.setAttribute("id", "responsive-" + id);
-
-    parent.insertBefore(wrapper, element);
-    wrapper.appendChild(element);
-    wrappers[id] = wrapper;
+    wrapper.setAttribute("id", "mobile-" + id);
+    el.parentNode.insertBefore(wrapper, el);
+    wrapper.appendChild(el);
+    wrappers.push(wrapper);
   });
-
-  const positions = {
-    g2: 14.113,
-    g3: 380.921,
-    g4: 744.839,
-    g6: 1105.648
-  };
-
-  const articleWidth = 348.428;
-  const articleHeight = 453.190;
-  const mobileWidth = 348.428;
-  const mobileGap = 24;
-  const mobileTop = 148.873;
 
   function layout() {
     const mobile = window.matchMedia("(max-width: 600px)").matches;
 
     if (!mobile) {
-      svg.setAttribute("viewBox", originalViewBox);
-      svg.setAttribute("preserveAspectRatio", "xMidYMid meet");
-
-      articles.forEach(function (id) {
-        if (wrappers[id]) {
-          wrappers[id].setAttribute(
-            "transform",
-            "translate(" + (positions[id] - positions[id]) + " 0)"
-          );
-        }
+      svg.setAttribute("viewBox", "0 0 1590 725");
+      svg.style.width = "1590px";
+      svg.style.height = "725px";
+      wrappers.forEach(function(w) {
+        w.removeAttribute("transform");
       });
       return;
     }
 
-    const scale = window.innerWidth / mobileWidth;
-    const pageHeight = mobileTop + articles.length * (articleHeight + mobileGap) + 120;
+    const pageHeight = mobileTop * 2 + ids.length * height + (ids.length - 1) * gap;
 
-    svg.setAttribute(
-      "viewBox",
-      "0 0 " + mobileWidth + " " + pageHeight
-    );
+    svg.setAttribute("viewBox", "0 0 " + mobileViewWidth + " " + pageHeight);
     svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
     svg.style.width = "100vw";
-    svg.style.height = "auto";
+    svg.style.height = (pageHeight / mobileViewWidth * 100) + "vw";
+    svg.style.maxWidth = "100%";
+    svg.style.display = "block";
 
-    articles.forEach(function (id, index) {
-      if (!wrappers[id]) return;
-
-      const x = positions[id];
-      const y = mobileTop + index * (articleHeight + mobileGap);
-
-      wrappers[id].setAttribute(
+    wrappers.forEach(function(w, i) {
+      w.setAttribute(
         "transform",
-        "translate(" + (-x + 14.113) + " " + (y - 148.873) + ")"
+        "translate(" + (14.113 - xs[i]) + " " + (mobileTop + i * (height + gap) - top) + ")"
       );
     });
   }
