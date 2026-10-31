@@ -1755,8 +1755,6 @@
     viewBox:"0 0 1590 725"
   };
 
-  // Coordonnées originales des rectangles :
-  // elles sont restaurées à l'identique en mode ordinateur.
   const originalBanner = {
     x:"14.124",
     y:"-140.158",
@@ -1799,11 +1797,16 @@
   wrappers.home = wrap("a5", "mobile-wrapper-home");
   wrappers.copyright = wrap("text38", "mobile-wrapper-copyright");
 
+  // Groupes enveloppes des deux rectangles
+  wrappers.bannerRect = wrap("rect8", "mobile-wrapper-banner-rect");
+  wrappers.copyrightRect = wrap("rect38", "mobile-wrapper-copyright-rect");
+
   const banner = document.getElementById("rect8");
   const copyrightRect = document.getElementById("rect38");
 
   function move(wrapper, x, y, scale) {
     if (!wrapper) return;
+
     scale = scale || 1;
 
     wrapper.setAttribute(
@@ -1824,9 +1827,6 @@
   function layout() {
     const isMobile = window.matchMedia("(max-width: 600px)").matches;
 
-    /*
-     * VERSION ORDINATEUR
-     */
     if (!isMobile) {
       svg.setAttribute("width", original.width);
       svg.setAttribute("height", original.height);
@@ -1840,7 +1840,6 @@
         if (w) w.removeAttribute("transform");
       });
 
-      // Restauration exacte des rectangles d'origine.
       restoreRectangle(banner, originalBanner);
       restoreRectangle(copyrightRect, originalCopyrightRect);
 
@@ -1848,38 +1847,23 @@
       return;
     }
 
-    /*
-     * VERSION MOBILE
-     */
     svg.setAttribute("width", "376");
     svg.setAttribute("height", "2160");
     svg.setAttribute("viewBox", "0 0 376 2160");
-    svg.setAttribute("preserveAspectRatio", "xMidYMin meet");
+    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
 
     svg.style.width = "100vw";
     svg.style.height = "auto";
     svg.style.display = "block";
 
-    /*
-     * BANDEAU RECTANGLE
-     * Réglages mobiles conservés.
-     */
-    if (banner) {
-      banner.setAttribute("x", "14.124");
-      banner.setAttribute("y", "48.095");
-      banner.setAttribute("width", "347.75");
-      banner.setAttribute("height", "125");
-    }
-
+    // Logo et textes du bandeau
     move(wrappers.logo, -18.37, -2.58, 1);
-
     move(
       wrappers.title,
       120 - 197.756 * 0.55,
       60 - 71.160 * 0.55,
       0.55
     );
-
     move(
       wrappers.subtitle,
       120 - 993.479 * 0.65,
@@ -1887,11 +1871,23 @@
       0.65
     );
 
-    /*
-     * BLOC VERROUILLÉ :
-     * EMPILEMENT DES QUATRE ARTICLES.
-     * Ne pas modifier sans autorisation expresse.
-     */
+    // Rectangle du bandeau : dimensions mobiles
+    if (banner) {
+      banner.setAttribute("x", "14.124");
+      banner.setAttribute("y", "-173.095");
+      banner.setAttribute("width", "347.75");
+      banner.setAttribute("height", "125");
+    }
+
+    // Déplacement du rectangle du bandeau par son groupe enveloppe
+    move(
+      wrappers.bannerRect,
+      14 - 14.124,
+      48.095 - 48.095,
+      1
+    );
+
+    // Empilement des articles : logique conservée à l'identique
     const articleStart = 190;
     const articleStep = 468;
 
@@ -1904,9 +1900,7 @@
       );
     });
 
-    /*
-     * LIEN HOME
-     */
+    // Lien Home
     move(
       wrappers.home,
       330 - 1394.680,
@@ -1914,20 +1908,23 @@
       1
     );
 
-    /*
-     * COPYRIGHT RECTANGLE
-     * Réglages mobiles conservés.
-     */
+    // Rectangle copyright : dimensions mobiles
     if (copyrightRect) {
       copyrightRect.setAttribute("x", "14");
-      copyrightRect.setAttribute("y", "2110");
+      copyrightRect.setAttribute("y", "-2129.127");
       copyrightRect.setAttribute("width", "347.75");
       copyrightRect.setAttribute("height", "19.127");
     }
 
-    /*
-     * TEXTE COPYRIGHT
-     */
+    // Déplacement du rectangle copyright par son groupe enveloppe
+    move(
+      wrappers.copyrightRect,
+      14 - 14,
+      2110 - 2110,
+      1
+    );
+
+    // Texte copyright
     move(
       wrappers.copyright,
       20 - 568.279 * 0.95,
