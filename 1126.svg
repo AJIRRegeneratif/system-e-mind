@@ -1825,7 +1825,7 @@
   }
 
   function layout() {
-    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+    const isMobile = document.documentElement.clientWidth <= 600;
 
     if (!isMobile) {
       svg.setAttribute("width", original.width);
