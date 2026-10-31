@@ -1744,11 +1744,6 @@
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
 
-  const MOBILE_WIDTH = 376;
-  const PAGE_HEIGHT = 2160;
-  const CONTENT_X = 14;
-  const CONTENT_WIDTH = 348;
-
   const articles = [
     { id: "g2", x: 14.113, y: 148.873 },
     { id: "g3", x: 380.921, y: 148.873 },
@@ -1757,23 +1752,20 @@
   ];
 
   const original = {
-    width: svg.getAttribute("width"),
-    height: svg.getAttribute("height"),
-    viewBox: svg.getAttribute("viewBox"),
-    preserveAspectRatio: svg.getAttribute("preserveAspectRatio"),
-    style: svg.getAttribute("style")
+    width: "1590",
+    height: "725",
+    viewBox: "0 0 1590 725"
   };
 
-  function get(id) {
-    return document.getElementById(id);
-  }
-
+  /*
+   * CRÉATION DES ENVELOPPES SVG
+   */
   function wrap(id, wrapperId) {
-    const element = get(id);
+    const element = document.getElementById(id);
     if (!element) return null;
 
-    let wrapper = get(wrapperId);
-    if (wrapper) return { element, wrapper };
+    let wrapper = document.getElementById(wrapperId);
+    if (wrapper) return wrapper;
 
     wrapper = document.createElementNS(NS, "g");
     wrapper.setAttribute("id", wrapperId);
@@ -1781,227 +1773,252 @@
     element.parentNode.insertBefore(wrapper, element);
     wrapper.appendChild(element);
 
-    return { element, wrapper };
+    return wrapper;
   }
 
-  const articleWrappers = articles.map((article, i) =>
-    wrap(article.id, "mobile-wrapper-article-" + i)
+  const wrappers = {};
+
+  /*
+   * ENVELOPPES DES ARTICLES
+   */
+  articles.forEach((article, index) => {
+    wrappers[article.id] = wrap(
+      article.id,
+      "mobile-wrapper-article-" + index
+    );
+  });
+
+  /*
+   * ENVELOPPES DES ÉLÉMENTS DU BANDEAU
+   */
+  wrappers.logo = wrap("a1", "mobile-wrapper-logo");
+  wrappers.title = wrap("g7", "mobile-wrapper-title");
+  wrappers.subtitle = wrap("g8", "mobile-wrapper-subtitle");
+
+  /*
+   * ENVELOPPE DU LIEN HOME
+   */
+  wrappers.home = wrap("a5", "mobile-wrapper-home");
+
+  /*
+   * ENVELOPPES DES RECTANGLES
+   * Ces deux déplacements restent indépendants
+   * des autres corrections.
+   */
+  wrappers.banner = wrap("rect8", "mobile-wrapper-banner");
+  wrappers.copyrightRect = wrap(
+    "rect38",
+    "mobile-wrapper-copyright-rect"
   );
 
-  // Fonds : on enveloppe les groupes entiers pour conserver
-  // les transformations verticales originales des rectangles.
-  const banner = wrap("g1", "mobile-wrapper-banner");
-  const copyrightBackground = wrap("g9", "mobile-wrapper-copyright-bg");
+  /*
+   * ENVELOPPE DU TEXTE COPYRIGHT
+   */
+  wrappers.copyrightText = wrap(
+    "text38",
+    "mobile-wrapper-copyright-text"
+  );
 
-  const logo = wrap("a1", "mobile-wrapper-logo");
-  const home = wrap("a5", "mobile-wrapper-home");
+  const banner = document.getElementById("rect8");
+  const copyrightRect = document.getElementById("rect38");
 
-  // Chaque texte est déplacé séparément.
-  const text11 = wrap("text11", "mobile-wrapper-text11");
-  const text15 = wrap("text15", "mobile-wrapper-text15");
-  const text21 = wrap("text21", "mobile-wrapper-text21");
-  const text16 = wrap("text16", "mobile-wrapper-text16");
-  const copyrightText = wrap("text38", "mobile-wrapper-copyright-text");
+  /*
+   * FONCTION DE DÉPLACEMENT SIMPLE
+   * Fonction conservée comme dans la base de référence.
+   */
+  function move(wrapper, x, y, scale) {
+    if (!wrapper) return;
 
-  const textEntries = [
-    { item: text11, x: 91, y: 25 },
-    { item: text15, x: 232, y: 25 },
-    { item: text21, x: 91, y: 79 },
-    { item: text16, x: 232, y: 79 },
-    { item: copyrightText, x: 20, y: 2124 }
-  ];
+    scale = scale || 1;
 
-  function rootBox(element) {
-    const box = element.getBBox();
-    const matrix = element.getCTM();
-
-    const corners = [
-      [box.x, box.y],
-      [box.x + box.width, box.y],
-      [box.x, box.y + box.height],
-      [box.x + box.width, box.y + box.height]
-    ].map(([x, y]) => {
-      const point = svg.createSVGPoint();
-      point.x = x;
-      point.y = y;
-      return point.matrixTransform(matrix);
-    });
-
-    const xs = corners.map(point => point.x);
-    const ys = corners.map(point => point.y);
-
-    const minX = Math.min(...xs);
-    const minY = Math.min(...ys);
-    const maxX = Math.max(...xs);
-    const maxY = Math.max(...ys);
-
-    return {
-      x: minX,
-      y: minY,
-      width: maxX - minX,
-      height: maxY - minY
-    };
-  }
-
-  function setRootTransform(item, matrix) {
-    const parentMatrix = item.wrapper.parentNode.getCTM();
-    const localMatrix = parentMatrix.inverse()
-      .multiply(matrix)
-      .multiply(parentMatrix);
-
-    item.wrapper.setAttribute(
+    wrapper.setAttribute(
       "transform",
-      "matrix(" + [
-        localMatrix.a,
-        localMatrix.b,
-        localMatrix.c,
-        localMatrix.d,
-        localMatrix.e,
-        localMatrix.f
-      ].join(" ") + ")"
+      "translate(" + x + " " + y + ") scale(" + scale + ")"
     );
   }
 
-  function placeAndScale(item, x, y, scaleX, scaleY) {
-    if (!item) return;
-
-    const box = rootBox(item.element);
-
-    const matrix = svg.createSVGMatrix()
-      .translate(x, y)
-      .scaleNonUniform(scaleX, scaleY)
-      .translate(-box.x, -box.y);
-
-    setRootTransform(item, matrix);
-  }
-
-  function placeAt(item, x, y) {
-    if (!item) return;
-
-    const box = rootBox(item.element);
-    const parentMatrix = item.wrapper.parentNode.getCTM();
-
-    const delta = svg.createSVGPoint();
-    delta.x = x - box.x;
-    delta.y = y - box.y;
-
-    const localDelta = delta.matrixTransform(parentMatrix.inverse());
-
-    item.wrapper.setAttribute(
-      "transform",
-      "translate(" + localDelta.x + " " + localDelta.y + ")"
-    );
-  }
-
-  function clearTransforms() {
-    const allItems = [
-      ...articleWrappers,
-      banner,
-      copyrightBackground,
-      logo,
-      home,
-      text11,
-      text15,
-      text21,
-      text16,
-      copyrightText
-    ];
-
-    allItems.forEach(item => {
-      if (item) item.wrapper.removeAttribute("transform");
+  function resetWrappers() {
+    Object.values(wrappers).forEach(wrapper => {
+      if (wrapper) {
+        wrapper.removeAttribute("transform");
+      }
     });
-  }
-
-  function desktopLayout() {
-    clearTransforms();
-
-    if (original.width !== null) svg.setAttribute("width", original.width);
-    if (original.height !== null) svg.setAttribute("height", original.height);
-    if (original.viewBox !== null) svg.setAttribute("viewBox", original.viewBox);
-
-    if (original.preserveAspectRatio === null) {
-      svg.removeAttribute("preserveAspectRatio");
-    } else {
-      svg.setAttribute("preserveAspectRatio", original.preserveAspectRatio);
-    }
-
-    if (original.style === null) {
-      svg.removeAttribute("style");
-    } else {
-      svg.setAttribute("style", original.style);
-    }
-  }
-
-  function mobileLayout() {
-    svg.setAttribute("viewBox", "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT);
-    svg.setAttribute("width", MOBILE_WIDTH);
-    svg.setAttribute("height", PAGE_HEIGHT);
-    svg.setAttribute("preserveAspectRatio", "none");
-
-    svg.style.display = "block";
-    svg.style.width = "100vw";
-    svg.style.height =
-      (window.innerWidth * PAGE_HEIGHT / MOBILE_WIDTH) + "px";
-    svg.style.maxWidth = "none";
-    svg.style.overflow = "visible";
-    svg.style.touchAction = "pan-y";
-
-    // BANDEAU : fond sur toute la largeur utile.
-    placeAndScale(
-      banner,
-      CONTENT_X,
-      8,
-      CONTENT_WIDTH / 1439.238,
-      1.15
-    );
-
-    // LOGO.
-    placeAndScale(logo, 16, 22, 0.72, 0.72);
-
-    // TEXTES DU BANDEAU.
-    // Ils sont repositionnés séparément pour éviter
-    // les décalages dus aux transformations de leurs groupes parents.
-    textEntries.slice(0, 4).forEach(entry => {
-      placeAt(entry.item, entry.x, entry.y);
-    });
-
-    // ARTICLES : même logique que le script qui les empilait correctement.
-    const articleStart = 190;
-    const articleStep = 468;
-
-    articles.forEach((article, i) => {
-      articleWrappers[i].wrapper.setAttribute(
-        "transform",
-        "translate(" +
-          (CONTENT_X - article.x) + " " +
-          (articleStart + i * articleStep - article.y) +
-        ")"
-      );
-    });
-
-    // HOME : placement à partir de sa boîte réelle.
-    placeAt(home, 330, 2060);
-
-    // FOND DU COPYRIGHT.
-    placeAndScale(
-      copyrightBackground,
-      CONTENT_X,
-      2118,
-      CONTENT_WIDTH / 548.28284,
-      1.15
-    );
-
-    // TEXTE DU COPYRIGHT.
-    placeAt(copyrightText, 20, 2124);
   }
 
   /*
-   * Gestion du mode d'affichage :
-   * - entrée en mode mobile à 600 px ou moins ;
-   * - sortie seulement au-delà de 700 px.
+   * MISE EN PAGE ORDINATEUR
+   */
+  function desktopLayout() {
+    svg.setAttribute("width", original.width);
+    svg.setAttribute("height", original.height);
+    svg.setAttribute("viewBox", original.viewBox);
+
+    svg.style.width = "";
+    svg.style.height = "";
+    svg.style.display = "";
+
+    resetWrappers();
+
+    if (banner) {
+      banner.setAttribute("x", "14.124");
+      banner.setAttribute("y", "-140.158");
+      banner.setAttribute("width", "1439.238");
+      banner.setAttribute("height", "92.063");
+    }
+
+    if (copyrightRect) {
+      copyrightRect.setAttribute("x", "466.80795");
+      copyrightRect.setAttribute("y", "-635.36621");
+      copyrightRect.setAttribute("width", "548.28284");
+      copyrightRect.setAttribute("height", "19.127499");
+    }
+
+    svg.removeAttribute("preserveAspectRatio");
+  }
+
+  /*
+   * MISE EN PAGE MOBILE
+   */
+  function mobileLayout() {
+    const MOBILE_WIDTH = 376;
+    const PAGE_HEIGHT = 2160;
+    const MOBILE_CONTENT_WIDTH = 347.75;
+
+    /*
+     * DIMENSIONS DU SVG
+     * Le viewBox et les dimensions correspondent.
+     */
+    svg.setAttribute("width", String(MOBILE_WIDTH));
+    svg.setAttribute("height", String(PAGE_HEIGHT));
+    svg.setAttribute(
+      "viewBox",
+      "0 0 " + MOBILE_WIDTH + " " + PAGE_HEIGHT
+    );
+
+    svg.setAttribute(
+      "preserveAspectRatio",
+      "xMidYMin meet"
+    );
+
+    svg.style.width = "100vw";
+    svg.style.height = "auto";
+    svg.style.display = "block";
+    svg.style.maxWidth = "none";
+
+    /*
+     * ==================================================
+     * BLOC VERROUILLÉ 1 : RECTANGLE DU BANDEAU
+     * Ne pas modifier sans autorisation explicite.
+     * ==================================================
+     */
+    if (banner) {
+      banner.setAttribute("x", "14.124");
+      banner.setAttribute("y", "-48.095");
+      banner.setAttribute("width", String(MOBILE_CONTENT_WIDTH));
+      banner.setAttribute("height", "125");
+    }
+
+    move(
+      wrappers.banner,
+      14 - 14.124,
+      0,
+      1
+    );
+
+    /*
+     * LOGO
+     */
+    move(
+      wrappers.logo,
+      -18.37,
+      -2.58,
+      1
+    );
+
+    /*
+     * TITRE ET TEXTES DU BANDEAU
+     */
+    move(
+      wrappers.title,
+      120 - 197.756 * 0.55,
+      60 - 71.160 * 0.55,
+      0.55
+    );
+
+    move(
+      wrappers.subtitle,
+      120 - 993.479 * 0.65,
+      105 - 74.376 * 0.65,
+      0.65
+    );
+
+    /*
+     * ==================================================
+     * BLOC VERROUILLÉ 2 : EMPILEMENT DES ARTICLES
+     * Ne pas modifier sans autorisation explicite.
+     * ==================================================
+     */
+    const articleStart = 190;
+    const articleStep = 468;
+
+    articles.forEach((article, index) => {
+      move(
+        wrappers[article.id],
+        14 - article.x,
+        articleStart + index * articleStep - article.y,
+        1
+      );
+    });
+
+    /*
+     * LIEN HOME
+     */
+    move(
+      wrappers.home,
+      330 - 1394.680,
+      2060 - 84.199,
+      1
+    );
+
+    /*
+     * ==================================================
+     * BLOC VERROUILLÉ 3 : RECTANGLE COPYRIGHT
+     * Ne pas modifier sans autorisation explicite.
+     * ==================================================
+     */
+    if (copyrightRect) {
+      copyrightRect.setAttribute("x", "466.80795");
+      copyrightRect.setAttribute("y", "-2110");
+      copyrightRect.setAttribute("width", String(MOBILE_CONTENT_WIDTH));
+      copyrightRect.setAttribute("height", "19.127499");
+    }
+
+    move(
+      wrappers.copyrightRect,
+      14 - 466.80795,
+      0,
+      1
+    );
+
+    /*
+     * TEXTE COPYRIGHT
+     */
+    move(
+      wrappers.copyrightText,
+      20 - 568.279 * 0.95,
+      2115 - 621.613 * 0.95,
+      0.95
+    );
+  }
+
+  /*
+   * GESTION DU MODE D'AFFICHAGE
    *
-   * Cette marge évite les basculements intempestifs
-   * lorsque le navigateur mobile déclenche un resize.
+   * Entrée en mode mobile à 600 px ou moins.
+   * Sortie du mode mobile uniquement au-delà de 700 px.
+   *
+   * Le défilement vertical ne déclenche aucun changement
+   * de mode : aucun gestionnaire scroll n'est utilisé.
    */
   let isMobile = window.innerWidth <= 600;
 
@@ -2018,16 +2035,21 @@
 
     if (!isMobile && width <= 600) {
       isMobile = true;
-      applyLayout();
+      mobileLayout();
       return;
     }
 
     if (isMobile && width > 700) {
       isMobile = false;
-      applyLayout();
+      desktopLayout();
       return;
     }
 
+    /*
+     * Si le mode mobile est déjà actif,
+     * on le conserve lors des variations de hauteur
+     * provoquées notamment par l'interface du navigateur.
+     */
     if (isMobile) {
       mobileLayout();
     }
@@ -2035,11 +2057,14 @@
 
   applyLayout();
 
-  window.addEventListener("resize", handleResize, { passive: true });
+  window.addEventListener("resize", handleResize, {
+    passive: true
+  });
 
   window.addEventListener("orientationchange", function () {
     window.setTimeout(handleResize, 150);
   });
+
 })();
 ]]></script>
 </svg>
