@@ -1360,7 +1360,7 @@
     titleBodyGap: 12,
     bodySourceGap: 16,
     sourceCopyrightGap: 22,
-    bottomExtra: 24
+    bottomExtra: 30
   };
 
   const $ = id => {
@@ -1369,44 +1369,36 @@
     return el;
   };
 
-  const originalViewBox = svg.getAttribute("viewBox");
-  const originalWidth = svg.getAttribute("width");
-  const originalHeight = svg.getAttribute("height");
-  const originalPreserve = svg.getAttribute("preserveAspectRatio");
-  const originalStyle = svg.getAttribute("style");
-
   const article = $("g1");
   const panel = $("rect4");
   const copyright = $("text38");
 
-  const originalArticleTransform = article.getAttribute("transform");
-
-  const originalText = {
-    title: $("text39").textContent.replace(/\s+/g, " ").trim(),
-    body: $("text41").textContent.replace(/\s+/g, " ").trim(),
-    source: $("text43").textContent.replace(/\s+/g, " ").trim(),
-    copyright: copyright.textContent.replace(/\s+/g, " ").trim()
+  const original = {
+    viewBox: svg.getAttribute("viewBox"),
+    width: svg.getAttribute("width"),
+    height: svg.getAttribute("height"),
+    preserveAspectRatio: svg.getAttribute("preserveAspectRatio"),
+    style: svg.getAttribute("style"),
+    articleTransform: article.getAttribute("transform"),
+    panel: {
+      x: panel.getAttribute("x"),
+      y: panel.getAttribute("y"),
+      width: panel.getAttribute("width"),
+      height: panel.getAttribute("height")
+    },
+    texts: {}
   };
 
-  const originalTextNodes = {
-    title: Array.from($("text39").childNodes).map(n => n.cloneNode(true)),
-    body: Array.from($("text41").childNodes).map(n => n.cloneNode(true)),
-    source: Array.from($("text43").childNodes).map(n => n.cloneNode(true)),
-    copyright: Array.from(copyright.childNodes).map(n => n.cloneNode(true))
-  };
+  const textIds = ["text39", "text41", "text43", "text38"];
 
-  const originalPanel = {
-    x: panel.getAttribute("x"),
-    y: panel.getAttribute("y"),
-    width: panel.getAttribute("width"),
-    height: panel.getAttribute("height")
-  };
-
-  const originalTextAttrs = {};
-
-  ["text39", "text41", "text43", "text38"].forEach(id => {
+  textIds.forEach(id => {
     const el = $(id);
-    originalTextAttrs[id] = {};
+
+    original.texts[id] = {
+      content: el.textContent.replace(/\s+/g, " ").trim(),
+      nodes: Array.from(el.childNodes).map(n => n.cloneNode(true)),
+      attrs: {}
+    };
 
     [
       "transform",
@@ -1420,98 +1412,24 @@
       "text-anchor",
       "fill"
     ].forEach(attr => {
-      originalTextAttrs[id][attr] = el.getAttribute(attr);
+      original.texts[id].attrs[attr] = el.getAttribute(attr);
     });
   });
 
-  function wrap(el, id) {
-    const group = document.createElementNS(NS, "g");
-    group.id = id;
-    el.parentNode.insertBefore(group, el);
-    group.appendChild(el);
-
-    return {
-      element: el,
-      wrapper: group
-    };
-  }
-
-  function getRootBox(item) {
-    const el = item.element;
-    const box = el.getBBox();
-    const elementMatrix = el.getCTM();
-    const parentMatrix = item.wrapper.parentNode.getCTM();
-
-    if (!elementMatrix || !parentMatrix) {
-      return {
-        x: box.x,
-        y: box.y,
-        width: box.width,
-        height: box.height
-      };
-    }
-
-    const matrix = parentMatrix.inverse().multiply(elementMatrix);
-
-    const points = [
-      [box.x, box.y],
-      [box.x + box.width, box.y],
-      [box.x, box.y + box.height],
-      [box.x + box.width, box.y + box.height]
-    ].map(([x, y]) => ({
-      x: matrix.a * x + matrix.c * y + matrix.e,
-      y: matrix.b * x + matrix.d * y + matrix.f
-    }));
-
-    const xs = points.map(p => p.x);
-    const ys = points.map(p => p.y);
-
-    return {
-      x: Math.min(...xs),
-      y: Math.min(...ys),
-      width: Math.max(...xs) - Math.min(...xs),
-      height: Math.max(...ys) - Math.min(...ys)
-    };
-  }
-
-  function scaleTo(item, x, y, width, height) {
-    const box = getRootBox(item);
-
-    if (!box.width || !box.height) return;
-
-    const sx = width / box.width;
-    const sy = height / box.height;
-
-    item.wrapper.setAttribute(
-      "transform",
-      "matrix(" +
-        sx + " 0 0 " + sy + " " +
-        (x - sx * box.x) + " " +
-        (y - sy * box.y) +
-      ")"
-    );
-  }
-
-  const banner = wrap($("rect8"), "mobile-banner-wrap");
-  const logoGraphic = wrap($("g41"), "mobile-logo-graphic-wrap");
-  const logoWords = wrap($("g2"), "mobile-logo-words-wrap");
-  const bannerWords = wrap($("g3"), "mobile-banner-words-wrap");
-  const home = wrap($("a1"), "mobile-home-wrap");
-
-  function measureFont(font) {
+  function getCanvasContext(font) {
     const canvas = document.createElement("canvas");
-    return canvas.getContext("2d");
+    const ctx = canvas.getContext("2d");
+    ctx.font = font;
+    return ctx;
   }
 
-  function makeLines(text, font, maxWidth) {
-    const ctx = measureFont(font);
-    ctx.font = font;
-
+  function wrapLines(text, font, maxWidth) {
+    const ctx = getCanvasContext(font);
     const words = text.split(/\s+/).filter(Boolean);
     const lines = [];
     let line = "";
 
-    for (const word of words) {
+    words.forEach(word => {
       const candidate = line ? line + " " + word : word;
 
       if (line && ctx.measureText(candidate).width > maxWidth) {
@@ -1520,10 +1438,9 @@
       } else {
         line = candidate;
       }
-    }
+    });
 
     if (line) lines.push(line);
-
     return lines;
   }
 
@@ -1546,7 +1463,7 @@
       (weight ? weight + " " : "") +
       fontSize + "px " + family;
 
-    const lines = makeLines(text, font, maxWidth);
+    const lines = wrapLines(text, font, maxWidth);
 
     el.replaceChildren();
     el.removeAttribute("style");
@@ -1555,7 +1472,6 @@
       "transform",
       "translate(" + x + " " + baseline + ")"
     );
-
     el.setAttribute("x", "0");
     el.setAttribute("y", "0");
     el.setAttribute("font-family", family);
@@ -1587,27 +1503,29 @@
     };
   }
 
-  // Force la racine SVG à occuper la largeur réelle de l'écran.
-  function setRootDimensions(height) {
-    const screenWidth = Math.max(
-      320,
-      window.innerWidth ||
-      document.documentElement.clientWidth ||
-      M.width
-    );
+  /*
+   * IMPORTANT :
+   * Le bandeau d'origine n'est pas modifié.
+   * Aucun wrapper, aucune transformation et aucun redimensionnement
+   * ne sont appliqués à rect8, g2, g3, g41 ou a1.
+   */
 
+  function setMobileRootDimensions(height) {
     svg.setAttribute(
       "viewBox",
       "0 0 " + M.width + " " + height
     );
 
-    svg.setAttribute("width", screenWidth + "px");
-    svg.setAttribute("height", height + "px");
     svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
 
+    // La largeur suit la largeur du viewport CSS.
+    // Le rapport d'aspect du SVG est conservé par le viewBox.
+    svg.setAttribute("width", "100%");
+    svg.removeAttribute("height");
+
     svg.style.setProperty("display", "block", "important");
-    svg.style.setProperty("width", screenWidth + "px", "important");
-    svg.style.setProperty("min-width", screenWidth + "px", "important");
+    svg.style.setProperty("width", "100vw", "important");
+    svg.style.setProperty("min-width", "100vw", "important");
     svg.style.setProperty("max-width", "none", "important");
     svg.style.setProperty("height", "auto", "important");
     svg.style.setProperty("margin", "0", "important");
@@ -1617,38 +1535,12 @@
   }
 
   function mobileLayout() {
-    // Bandeau supérieur.
-    scaleTo(
-      banner,
-      M.margin,
-      8,
-      M.width - 2 * M.margin,
-      25
-    );
-
-    // Logo et éléments du bandeau.
-    scaleTo(
-      logoGraphic,
-      17,
-      17,
-      52,
-      65
-    );
-
-    logoWords.wrapper.setAttribute(
-      "transform",
-      "translate(-5 2) scale(.72)"
-    );
-
-    bannerWords.wrapper.setAttribute(
-      "transform",
-      "translate(-420 2) scale(.48)"
-    );
+    // Le bandeau est laissé strictement tel qu'il est dans le SVG original.
 
     // Titre.
     const title = rebuildText(
       "text39",
-      originalText.title,
+      original.texts.text39.content,
       M.textX,
       M.panelTop + M.panelPaddingTop,
       M.textWidth,
@@ -1668,7 +1560,7 @@
 
     const body = rebuildText(
       "text41",
-      originalText.body,
+      original.texts.text41.content,
       M.textX,
       bodyBaseline,
       M.textWidth,
@@ -1679,7 +1571,7 @@
       "normal"
     );
 
-    // Référence bibliographique.
+    // Référence.
     const sourceBaseline =
       bodyBaseline +
       body.height +
@@ -1687,7 +1579,7 @@
 
     const source = rebuildText(
       "text43",
-      originalText.source,
+      original.texts.text43.content,
       M.textX,
       sourceBaseline,
       M.textWidth,
@@ -1698,7 +1590,7 @@
       "italic"
     );
 
-    // Copyright positionné sous la référence.
+    // Copyright placé sous la référence.
     const copyrightBaseline =
       sourceBaseline +
       source.height +
@@ -1706,7 +1598,7 @@
 
     const copyrightLayout = rebuildText(
       "text38",
-      originalText.copyright,
+      original.texts.text38.content,
       M.textX,
       copyrightBaseline,
       M.textWidth,
@@ -1717,7 +1609,7 @@
       "normal"
     );
 
-    // Calcul de la hauteur du contenu.
+    // Calcul de la hauteur totale.
     const contentBottom =
       copyrightBaseline +
       copyrightLayout.height;
@@ -1728,8 +1620,10 @@
       M.panelTop
     );
 
-    // Rectangle de fond.
+    // Rectangle de fond de l'article.
     panel.setAttribute("x", String(M.panelX));
+
+    // Le groupe g1 conserve son translate(0,-10).
     panel.setAttribute("y", String(M.panelTop + 10));
 
     panel.setAttribute(
@@ -1742,117 +1636,108 @@
       String(panelHeight)
     );
 
-    // Masquer les décorations de l'article.
+    // Masquage des décorations internes à l'article uniquement.
     article.querySelectorAll("path").forEach(path => {
+      if (!path.hasAttribute("data-original-display")) {
+        path.setAttribute(
+          "data-original-display",
+          path.getAttribute("display") === null
+            ? "__none__"
+            : path.getAttribute("display")
+        );
+      }
+
       path.setAttribute("display", "none");
     });
 
-    // Lien d'accueil.
-    home.wrapper.setAttribute(
-      "transform",
-      "translate(330 8) scale(.7)"
-    );
-
-    // Dimensions de la racine SVG.
     const totalHeight = Math.max(
       900,
       Math.ceil(contentBottom + M.bottomExtra)
     );
 
-    setRootDimensions(totalHeight);
+    setMobileRootDimensions(totalHeight);
   }
 
   function desktopLayout() {
-    if (originalViewBox === null) {
+    if (original.viewBox === null) {
       svg.removeAttribute("viewBox");
     } else {
-      svg.setAttribute("viewBox", originalViewBox);
+      svg.setAttribute("viewBox", original.viewBox);
     }
 
-    if (originalWidth === null) {
+    if (original.width === null) {
       svg.removeAttribute("width");
     } else {
-      svg.setAttribute("width", originalWidth);
+      svg.setAttribute("width", original.width);
     }
 
-    if (originalHeight === null) {
+    if (original.height === null) {
       svg.removeAttribute("height");
     } else {
-      svg.setAttribute("height", originalHeight);
+      svg.setAttribute("height", original.height);
     }
 
-    if (originalPreserve === null) {
+    if (original.preserveAspectRatio === null) {
       svg.removeAttribute("preserveAspectRatio");
     } else {
-      svg.setAttribute("preserveAspectRatio", originalPreserve);
+      svg.setAttribute(
+        "preserveAspectRatio",
+        original.preserveAspectRatio
+      );
     }
 
-    if (originalStyle === null) {
+    if (original.style === null) {
       svg.removeAttribute("style");
     } else {
-      svg.setAttribute("style", originalStyle);
+      svg.setAttribute("style", original.style);
     }
 
-    [
-      banner,
-      logoGraphic,
-      logoWords,
-      bannerWords,
-      home
-    ].forEach(item => {
-      item.wrapper.removeAttribute("transform");
-    });
-
-    if (originalArticleTransform === null) {
+    if (original.articleTransform === null) {
       article.removeAttribute("transform");
     } else {
       article.setAttribute(
         "transform",
-        originalArticleTransform
+        original.articleTransform
       );
     }
 
-    panel.setAttribute("x", originalPanel.x);
-    panel.setAttribute("y", originalPanel.y);
-    panel.setAttribute("width", originalPanel.width);
-    panel.setAttribute("height", originalPanel.height);
+    panel.setAttribute("x", original.panel.x);
+    panel.setAttribute("y", original.panel.y);
+    panel.setAttribute("width", original.panel.width);
+    panel.setAttribute("height", original.panel.height);
 
-    ["text39", "text41", "text43", "text38"].forEach(id => {
+    textIds.forEach(id => {
       const el = $(id);
-      const attrs = originalTextAttrs[id];
+      const data = original.texts[id];
 
-      Object.keys(attrs).forEach(attr => {
-        if (attrs[attr] === null) {
+      Object.keys(data.attrs).forEach(attr => {
+        if (data.attrs[attr] === null) {
           el.removeAttribute(attr);
         } else {
-          el.setAttribute(attr, attrs[attr]);
+          el.setAttribute(attr, data.attrs[attr]);
         }
       });
+
+      el.replaceChildren(
+        ...data.nodes.map(n => n.cloneNode(true))
+      );
     });
 
-    $("text39").replaceChildren(
-      ...originalTextNodes.title.map(n => n.cloneNode(true))
-    );
+    article.querySelectorAll("path[data-original-display]").forEach(path => {
+      const value = path.getAttribute("data-original-display");
 
-    $("text41").replaceChildren(
-      ...originalTextNodes.body.map(n => n.cloneNode(true))
-    );
+      if (value === "__none__") {
+        path.removeAttribute("display");
+      } else {
+        path.setAttribute("display", value);
+      }
 
-    $("text43").replaceChildren(
-      ...originalTextNodes.source.map(n => n.cloneNode(true))
-    );
-
-    $("text38").replaceChildren(
-      ...originalTextNodes.copyright.map(n => n.cloneNode(true))
-    );
-
-    article.querySelectorAll('path[display="none"]').forEach(path => {
-      path.removeAttribute("display");
+      path.removeAttribute("data-original-display");
     });
   }
 
-  // Verrouillage du mode au chargement.
-  // Pas de bascule automatique lors du défilement sur mobile.
+  // Le mode mobile est verrouillé dès le chargement.
+  // Pas de retour automatique en mode ordinateur pendant le défilement.
   if (mobileQuery.matches) {
     mobileLayout();
   } else {
@@ -1865,10 +1750,7 @@
     };
 
     if (typeof mobileQuery.addEventListener === "function") {
-      mobileQuery.addEventListener(
-        "change",
-        onBreakpointChange
-      );
+      mobileQuery.addEventListener("change", onBreakpointChange);
     } else {
       mobileQuery.addListener(onBreakpointChange);
     }
