@@ -1499,24 +1499,41 @@
   }
 
   function resizeMobileArticlePanel() {
-    if (!mobileTextObject || !mobileTextContainer) return;
+  if (!mobileTextObject || !mobileTextContainer) return;
 
-    // Hauteur réelle du contenu HTML, exprimée dans son propre repère.
-    const contentHeight = mobileTextContainer.scrollHeight;
+  // Récupère l'échelle verticale réelle entre les pixels écran
+  // et les unités du SVG.
+  const matrix = mobileTextObject.getScreenCTM();
+  if (!matrix) return;
 
-    // Le rectangle visible commence à y=100.82375 dans g1.
-    // Le texte mobile commence à y=160 dans le même repère.
-    const textY = 160;
-    const panelY = 100.82375;
-    const bottomPadding = 24;
+  const scaleY = Math.hypot(matrix.c, matrix.d);
+  if (!scaleY) return;
 
-    const requiredHeight =
-      textY + contentHeight + bottomPadding - panelY;
+  // Hauteur réellement occupée par le texte, convertie en unités SVG.
+  const renderedHeight =
+    mobileTextContainer.getBoundingClientRect().height;
 
-    articlePanel.setAttribute(
-      "height",
-      String(Math.ceil(requiredHeight))
-    );
+  const contentHeight = renderedHeight / scaleY;
+
+  const textY = 160;
+  const panelY = 100.82375;
+  const bottomPadding = 24;
+
+  // Le bas du rectangle doit dépasser le bas du texte.
+  const requiredHeight =
+    textY + contentHeight + bottomPadding - panelY;
+
+  articlePanel.setAttribute(
+    "height",
+    String(Math.ceil(requiredHeight))
+  );
+
+  // La zone HTML reçoit également sa hauteur réelle.
+  mobileTextObject.setAttribute(
+    "height",
+    String(Math.ceil(contentHeight + 2))
+  );
+  }
 
     mobileTextObject.setAttribute(
       "height",
