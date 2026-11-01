@@ -1438,8 +1438,26 @@
   let mobileReferenceObject = null;
   let mobileReferenceContainer = null;
 
-  let currentMobileWidth = 188;
+  let currentMobileWidth = 376;
   let resizeFrame = null;
+
+  function getAvailableWidth() {
+    const parent = svg.parentElement;
+
+    const parentWidth = parent
+      ? parent.clientWidth
+      : 0;
+
+    const viewportWidth =
+      document.documentElement.clientWidth ||
+      window.innerWidth ||
+      376;
+
+    return Math.max(
+      280,
+      Math.round(parentWidth || viewportWidth)
+    );
+  }
 
   function createTextObject(
     id,
@@ -1458,7 +1476,7 @@
     foreignObject.setAttribute("id", id);
     foreignObject.setAttribute("x", "9");
     foreignObject.setAttribute("y", String(y));
-    foreignObject.setAttribute("width", "150");
+    foreignObject.setAttribute("width", "338");
     foreignObject.setAttribute("height", "10000");
 
     const container = document.createElementNS(XHTML, "div");
@@ -1492,6 +1510,7 @@
   function createMobileArticleText() {
     if (mobileTitleObject) return;
 
+    // TITRE
     const title = createTextObject(
       "mobile-article-title",
       110,
@@ -1508,6 +1527,7 @@
     mobileTitleObject = title.object;
     mobileTitleContainer = title.container;
 
+    // CORPS DE L'ARTICLE
     const body = createTextObject(
       "mobile-article-text",
       160,
@@ -1539,6 +1559,7 @@
     mobileTextObject = body.object;
     mobileTextContainer = body.container;
 
+    // RÉFÉRENCE
     const reference = createTextObject(
       "mobile-article-reference",
       0,
@@ -1561,8 +1582,10 @@
   }
 
   function setMobileTextWidth(width) {
-    const panelWidth = Math.max(120, width - 28);
-    const textWidth = Math.max(100, panelWidth - 20);
+    const panelMargin = 14;
+    const panelWidth = Math.max(240, width - panelMargin * 2);
+    const innerPadding = 10;
+    const textWidth = Math.max(210, panelWidth - innerPadding * 2);
 
     [
       mobileTitleObject,
@@ -1599,6 +1622,7 @@
     const gapTitleBody = 18;
     const gapBodyReference = 18;
 
+    // Mesure du titre après retour à la ligne.
     const titleHeight =
       mobileTitleContainer.getBoundingClientRect().height;
 
@@ -1607,10 +1631,12 @@
       String(Math.ceil(titleHeight) + 2)
     );
 
+    // Positionnement du corps.
     const bodyY = titleY + titleHeight + gapTitleBody;
 
     mobileTextObject.setAttribute("y", String(bodyY));
 
+    // Mesure du corps.
     const bodyHeight =
       mobileTextContainer.getBoundingClientRect().height;
 
@@ -1619,6 +1645,7 @@
       String(Math.ceil(bodyHeight) + 2)
     );
 
+    // Positionnement de la référence.
     const referenceY =
       bodyY + bodyHeight + gapBodyReference;
 
@@ -1627,6 +1654,7 @@
       String(referenceY)
     );
 
+    // Mesure de la référence.
     const referenceHeight =
       mobileReferenceContainer.getBoundingClientRect().height;
 
@@ -1635,6 +1663,7 @@
       String(Math.ceil(referenceHeight) + 2)
     );
 
+    // Hauteur du panneau selon le contenu réel.
     const panelTop = 100.82375;
     const bottomPadding = 24;
 
@@ -1646,8 +1675,9 @@
       String(Math.ceil(totalHeight))
     );
 
+    // Hauteur du document SVG.
     const articleBottom =
-      90.013 + 100.82375 + Math.ceil(totalHeight) + 30;
+      190 + 100.82375 + Math.ceil(totalHeight) + 30;
 
     const homeBottom = 2090;
 
@@ -1658,16 +1688,12 @@
       "0 0 " + currentMobileWidth + " " + svgHeight
     );
 
+    svg.setAttribute("height", String(svgHeight));
     svg.style.height = svgHeight + "px";
   }
 
   function updateMobileArticleLayout() {
-    const width = Math.max(
-      140,
-      Math.round(
-        (window.innerWidth || 376) / 2
-      )
-    );
+    const width = getAvailableWidth();
 
     currentMobileWidth = width;
 
@@ -1711,12 +1737,7 @@
   // ==========================================================
 
   function mobileLayout() {
-    const width = Math.max(
-      140,
-      Math.round(
-        (window.innerWidth || 376) / 2
-      )
-    );
+    const width = getAvailableWidth();
 
     currentMobileWidth = width;
 
@@ -1724,12 +1745,13 @@
     svg.setAttribute("viewBox", "0 0 " + width + " 2160");
     svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
 
-    svg.style.width = "50vw";
-    svg.style.maxWidth = "50vw";
+    svg.style.width = "100%";
+    svg.style.maxWidth = "100%";
     svg.style.minWidth = "0";
     svg.style.height = "2160px";
     svg.style.display = "block";
 
+    // Logo et textes du bandeau.
     move(wrappers.logo, -18.37, -2.58, 1);
 
     move(
@@ -1746,6 +1768,7 @@
       0.65
     );
 
+    // Rectangle du bandeau.
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "-173.095");
@@ -1760,6 +1783,7 @@
       1
     );
 
+    // Positionnement de l'article.
     const articleStart = 190;
 
     articles.forEach((a, i) => {
@@ -1771,6 +1795,7 @@
       );
     });
 
+    // Lien Home.
     move(
       wrappers.home,
       Math.min(width - 46, 330) - 1330.750,
