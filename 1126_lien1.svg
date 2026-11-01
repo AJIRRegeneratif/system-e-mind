@@ -1408,53 +1408,101 @@
   }
 
   // ==========================================================
-  // AJOUT — Gestion du texte et du rectangle de l'article
+  // AJOUT — Adaptation des trois textes de l'article
   // ==========================================================
 
   const articleGroup = document.getElementById("g1");
-  const articlePanel = document.getElementById("rect4");
+
+  const articleTitle = document.getElementById("text39");
   const articleText = document.getElementById("text41");
+  const articleReference = document.getElementById("text43");
 
-  const originalArticleHeight = articlePanel.getAttribute("height");
-  const originalArticleWidth = articlePanel.getAttribute("width");
-  const originalArticleX = articlePanel.getAttribute("x");
-  const originalArticleTextDisplay = articleText.style.display;
+  const originalTitleDisplay = articleTitle.style.display;
+  const originalTextDisplay = articleText.style.display;
+  const originalReferenceDisplay = articleReference.style.display;
 
-  // Conservation du texte original
+  const originalTitleContent = articleTitle.textContent;
   const originalArticleContent = articleText.textContent;
+  const originalReferenceContent = articleReference.textContent;
+
+  let mobileTitleObject = null;
+  let mobileTitleContainer = null;
 
   let mobileTextObject = null;
   let mobileTextContainer = null;
 
-  function createMobileArticleText() {
-    if (mobileTextObject) {
-      mobileTextObject.remove();
-      mobileTextObject = null;
-      mobileTextContainer = null;
-    }
+  let mobileReferenceObject = null;
+  let mobileReferenceContainer = null;
 
-    mobileTextObject = document.createElementNS(
+  function createMobileTextObject(id, x, y, width, style) {
+    const foreignObject = document.createElementNS(
       NS,
       "foreignObject"
     );
 
-    mobileTextObject.setAttribute("id", "mobile-article-text");
-    mobileTextObject.setAttribute("x", "9");
-    mobileTextObject.setAttribute("y", "160");
-    mobileTextObject.setAttribute("width", "338");
-    mobileTextObject.setAttribute("height", "10000");
+    foreignObject.setAttribute("id", id);
+    foreignObject.setAttribute("x", String(x));
+    foreignObject.setAttribute("y", String(y));
+    foreignObject.setAttribute("width", String(width));
+    foreignObject.setAttribute("height", "10000");
 
-    mobileTextContainer = document.createElementNS(
+    const container = document.createElementNS(
       "http://www.w3.org/1999/xhtml",
       "div"
     );
 
-    mobileTextContainer.setAttribute(
+    container.setAttribute(
       "xmlns",
       "http://www.w3.org/1999/xhtml"
     );
 
-    mobileTextContainer.style.cssText =
+    container.style.cssText = style;
+
+    foreignObject.appendChild(container);
+    articleGroup.appendChild(foreignObject);
+
+    return {
+      object: foreignObject,
+      container: container
+    };
+  }
+
+  function createMobileArticleText() {
+    // Évite de créer plusieurs fois les mêmes objets
+    if (mobileTitleObject) return;
+
+    // TITRE : text39
+    const title = createMobileTextObject(
+      "mobile-article-title",
+      9,
+      110,
+      338,
+      "box-sizing:border-box;" +
+      "width:338px;" +
+      "margin:0;" +
+      "padding:0;" +
+      "font-family:'Leelawadee UI',Arial,sans-serif;" +
+      "font-size:18.667px;" +
+      "font-weight:bold;" +
+      "line-height:1.25;" +
+      "color:#ffffff;" +
+      "text-align:left;" +
+      "white-space:normal;" +
+      "overflow-wrap:break-word;"
+    );
+
+    title.container.textContent =
+      originalTitleContent.replace(/\s+/g, " ").trim();
+
+    mobileTitleObject = title.object;
+    mobileTitleContainer = title.container;
+
+    // TEXTE PRINCIPAL : text41
+    const body = createMobileTextObject(
+      "mobile-article-text",
+      9,
+      160,
+      338,
       "box-sizing:border-box;" +
       "width:338px;" +
       "margin:0;" +
@@ -1467,9 +1515,9 @@
       "text-align:left;" +
       "white-space:normal;" +
       "overflow-wrap:break-word;" +
-      "word-break:normal;";
+      "word-break:normal;"
+    );
 
-    // Les doubles retours à la ligne délimitent les paragraphes
     const paragraphs = originalArticleContent
       .replace(/\r/g, "")
       .split(/\n\s*\n/);
@@ -1489,56 +1537,115 @@
         : "0 0 12px 0";
       p.style.padding = "0";
 
-      mobileTextContainer.appendChild(p);
+      body.container.appendChild(p);
     });
 
-    mobileTextObject.appendChild(mobileTextContainer);
-    articleGroup.appendChild(mobileTextObject);
+    mobileTextObject = body.object;
+    mobileTextContainer = body.container;
 
-    // Masquage du texte SVG original sur mobile
+    // RÉFÉRENCE BIBLIOGRAPHIQUE : text43
+    const reference = createMobileTextObject(
+      "mobile-article-reference",
+      9,
+      0,
+      338,
+      "box-sizing:border-box;" +
+      "width:338px;" +
+      "margin:0;" +
+      "padding:0;" +
+      "font-family:Calibri,Arial,sans-serif;" +
+      "font-size:10.667px;" +
+      "font-style:italic;" +
+      "font-weight:300;" +
+      "line-height:1.2;" +
+      "color:#ffffff;" +
+      "text-align:left;" +
+      "white-space:normal;" +
+      "overflow-wrap:break-word;"
+    );
+
+    reference.container.textContent =
+      originalReferenceContent.replace(/\s+/g, " ").trim();
+
+    mobileReferenceObject = reference.object;
+    mobileReferenceContainer = reference.container;
+
+    // Masquage des trois textes SVG d'origine sur mobile
+    articleTitle.style.display = "none";
     articleText.style.display = "none";
+    articleReference.style.display = "none";
   }
 
-  function resizeMobileArticlePanel() {
-    if (!mobileTextObject || !mobileTextContainer || !articlePanel) return;
+  function resizeMobileArticleText() {
+    if (
+      !mobileTitleContainer ||
+      !mobileTextContainer ||
+      !mobileReferenceContainer
+    ) return;
 
-    const contentHeight = mobileTextContainer.scrollHeight;
+    // Mesure du titre
+    const titleHeight = mobileTitleContainer.scrollHeight;
 
-    const textY = 160;
-    const panelY = 100.82375;
-    const bottomPadding = 24;
+    // Le texte principal commence après le titre
+    const titleY = 110;
+    const gapTitleBody = 12;
+    const bodyY = titleY + titleHeight + gapTitleBody;
 
-    const requiredHeight =
-      textY + contentHeight + bottomPadding - panelY;
+    mobileTextObject.setAttribute("y", String(bodyY));
 
-    // Largeur et position du rectangle sur mobile
-    articlePanel.setAttribute("x", "3.889");
-    articlePanel.setAttribute("width", "347.75");
+    // Mesure du texte principal
+    const bodyHeight = mobileTextContainer.scrollHeight;
 
-    // Hauteur calculée selon la hauteur réelle du texte
-    articlePanel.setAttribute(
+    // La référence commence après le texte principal
+    const gapBodyReference = 16;
+    const referenceY = bodyY + bodyHeight + gapBodyReference;
+
+    mobileReferenceObject.setAttribute(
+      "y",
+      String(referenceY)
+    );
+
+    // Mesure de la référence bibliographique
+    const referenceHeight = mobileReferenceContainer.scrollHeight;
+
+    // Ajustement des hauteurs des trois zones de texte
+    mobileTitleObject.setAttribute(
       "height",
-      String(Math.ceil(requiredHeight))
+      String(titleHeight + 2)
     );
 
     mobileTextObject.setAttribute(
       "height",
-      String(Math.ceil(contentHeight) + 2)
+      String(bodyHeight + 2)
+    );
+
+    mobileReferenceObject.setAttribute(
+      "height",
+      String(referenceHeight + 2)
     );
   }
 
   function restoreMobileArticleText() {
-    if (mobileTextObject) {
-      mobileTextObject.remove();
-      mobileTextObject = null;
-      mobileTextContainer = null;
-    }
+    [
+      mobileTitleObject,
+      mobileTextObject,
+      mobileReferenceObject
+    ].forEach(function (element) {
+      if (element) element.remove();
+    });
 
-    articleText.style.display = originalArticleTextDisplay;
+    mobileTitleObject = null;
+    mobileTitleContainer = null;
 
-    articlePanel.setAttribute("height", originalArticleHeight);
-    articlePanel.setAttribute("width", originalArticleWidth);
-    articlePanel.setAttribute("x", originalArticleX);
+    mobileTextObject = null;
+    mobileTextContainer = null;
+
+    mobileReferenceObject = null;
+    mobileReferenceContainer = null;
+
+    articleTitle.style.display = originalTitleDisplay;
+    articleText.style.display = originalTextDisplay;
+    articleReference.style.display = originalReferenceDisplay;
   }
 
   // ==========================================================
@@ -1563,7 +1670,6 @@
 
       restoreRectangle(banner, originalBanner);
 
-      // Restauration de l'article sur ordinateur
       restoreMobileArticleText();
 
       svg.removeAttribute("preserveAspectRatio");
@@ -1633,12 +1739,12 @@
       1
     );
 
-    // Création et ajustement du texte mobile
+    // Création et mesure des textes mobiles
     createMobileArticleText();
 
     requestAnimationFrame(function () {
       if (!window.matchMedia("(max-width: 600px)").matches) return;
-      resizeMobileArticlePanel();
+      resizeMobileArticleText();
     });
   }
 
