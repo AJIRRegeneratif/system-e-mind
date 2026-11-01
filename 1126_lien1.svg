@@ -1411,18 +1411,17 @@
   // ==========================================================
 
   function convertPoint(point, sourceElement, targetParent) {
-    const sourceMatrix = sourceElement.getScreenCTM();
-    const targetMatrix = targetParent.getScreenCTM();
+    const sourceMatrix = sourceElement.getCTM();
+    const targetMatrix = targetParent.getCTM();
 
     if (!sourceMatrix || !targetMatrix) {
       throw new Error("Impossible de calculer les coordonnées SVG.");
     }
 
-    const screenPoint = point.matrixTransform(sourceMatrix);
+    const svgPoint = point.matrixTransform(sourceMatrix);
 
-    return screenPoint.matrixTransform(targetMatrix.inverse());
+    return svgPoint.matrixTransform(targetMatrix.inverse());
   }
-
   function getBannerTopInTitleCoordinates() {
     if (!wrappers.bannerRect || !wrappers.title) {
       throw new Error("Bandeau ou titre introuvable.");
