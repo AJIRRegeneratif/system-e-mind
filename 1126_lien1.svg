@@ -1860,12 +1860,12 @@
 
     // ========================================================
     // TITRE ET SOUS-TITRE
-    // Positionnés à 15 px du haut réel du bandeau
+    // Positionnés à 40 px du haut réel du bandeau
     // ========================================================
 
     const titleScale = 1.10;
     const titleTargetX = 120;
-    const bannerMarginTop = 15;
+    const bannerMarginTop = 40;
 
     let titleTargetY;
 
@@ -1873,8 +1873,7 @@
       const bannerTop = getBannerTopInTitleCoordinates();
       titleTargetY = bannerTop + bannerMarginTop;
     } catch (error) {
-      // Valeur de secours si le navigateur ne fournit pas les matrices.
-      titleTargetY = 60;
+      titleTargetY = 85;
     }
 
     move(
