@@ -1407,7 +1407,7 @@
   }
 
   // ==========================================================
-  // CALCUL DE POSITION ENTRE LES COORDONNÉES SVG
+  // CONVERSION DES COORDONNÉES SVG
   // ==========================================================
 
   function convertPoint(point, sourceElement, targetParent) {
@@ -1419,6 +1419,7 @@
     }
 
     const screenPoint = point.matrixTransform(sourceMatrix);
+
     return screenPoint.matrixTransform(targetMatrix.inverse());
   }
 
@@ -1560,7 +1561,7 @@
 
     const title = createTextObject(
       "mobile-article-title",
-      110,
+      150.82375,
       37,
       1.25,
       "'Leelawadee UI',Arial,sans-serif",
@@ -1689,7 +1690,7 @@
       !mobileCopyrightContainer
     ) return;
 
-    const titleY = 110;
+    const titleY = 150.82375;
     const gapTitleBody = 18;
     const gapBodyReference = 18;
     const gapReferenceCopyright = 18;
@@ -1840,29 +1841,7 @@
     svg.style.height = "2160px";
     svg.style.display = "block";
 
-    // ========================================================
-    // RECTANGLE DU BANDEAU
-    // ========================================================
-
-    if (banner) {
-      banner.setAttribute("x", "14.124");
-      banner.setAttribute("y", "-173.095");
-      banner.setAttribute("width", String(width - 28));
-      banner.setAttribute("height", "125");
-    }
-
-    move(
-      wrappers.bannerRect,
-      3 - 3.078,
-      1 - -0.765,
-      1
-    );
-
-    // ========================================================
-    // TITRE ET SOUS-TITRE
-    // Positionnés à 40 px du haut réel du bandeau
-    // ========================================================
-
+    // TITRE DU BANDEAU
     const titleScale = 1.10;
     const titleTargetX = 120;
     const bannerMarginTop = 40;
@@ -1883,10 +1862,7 @@
       titleScale
     );
 
-    // ========================================================
-    // LOGO À GAUCHE DU TITRE
-    // ========================================================
-
+    // LOGO À GAUCHE DU TITRE, CENTRÉ VERTICALEMENT
     if (wrappers.logo && wrappers.title) {
       try {
         const logoBounds = wrappers.logo.getBBox();
@@ -1920,10 +1896,7 @@
       }
     }
 
-    // ========================================================
     // SOUS-TITRE
-    // ========================================================
-
     const subtitleScale = 1.30;
     const subtitleGap = 100;
 
@@ -1937,27 +1910,40 @@
           titleBounds.width * titleScale +
           subtitleGap;
 
+        const subtitleTargetY = titleTargetY;
+
         move(
           wrappers.subtitle,
           subtitleTargetX - subtitleBounds.x * subtitleScale,
-          titleTargetY - subtitleBounds.y * subtitleScale,
+          subtitleTargetY - subtitleBounds.y * subtitleScale,
           subtitleScale
         );
-
       } catch (error) {
         move(
           wrappers.subtitle,
           120 - 1010.446 * subtitleScale,
-          titleTargetY - 25.516 * subtitleScale,
+          105 - 25.516 * subtitleScale,
           subtitleScale
         );
       }
     }
 
-    // ========================================================
-    // POSITIONNEMENT DE L'ARTICLE
-    // ========================================================
+    // RECTANGLE DU BANDEAU
+    if (banner) {
+      banner.setAttribute("x", "14.124");
+      banner.setAttribute("y", "-173.095");
+      banner.setAttribute("width", String(width - 28));
+      banner.setAttribute("height", "125");
+    }
 
+    move(
+      wrappers.bannerRect,
+      3 - 3.078,
+      1 - -0.765,
+      1
+    );
+
+    // POSITIONNEMENT DE L'ARTICLE
     const articleStart = 190;
 
     articles.forEach((a, i) => {
@@ -1969,10 +1955,7 @@
       );
     });
 
-    // ========================================================
     // LIEN HOME
-    // ========================================================
-
     move(
       wrappers.home,
       Math.min(width - 46, 330) - 1330.750,
