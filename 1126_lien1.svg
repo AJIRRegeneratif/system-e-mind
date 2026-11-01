@@ -1350,11 +1350,6 @@
   const panel = $("rect4");
   const article = $("g1");
 
-  const titleEl = $("text39");
-  const bodyEl = $("text41");
-  const sourceEl = $("text43");
-  const copyrightEl = $("text38");
-
   const original = {
     viewBox: svg.getAttribute("viewBox"),
     width: svg.getAttribute("width"),
@@ -1371,8 +1366,12 @@
     texts: {}
   };
 
-  [titleEl, bodyEl, sourceEl, copyrightEl].forEach(el => {
-    original.texts[el.id] = {
+  const textIds = ["text39", "text41", "text43", "text38"];
+
+  textIds.forEach(id => {
+    const el = $(id);
+
+    original.texts[id] = {
       content: el.textContent.replace(/\s+/g, " ").trim(),
       nodes: Array.from(el.childNodes).map(n => n.cloneNode(true)),
       attrs: {}
@@ -1383,15 +1382,15 @@
       "font-family", "font-weight", "font-style",
       "text-anchor", "fill"
     ].forEach(attr => {
-      original.texts[el.id].attrs[attr] = el.getAttribute(attr);
+      original.texts[id].attrs[attr] = el.getAttribute(attr);
     });
   });
 
   const M = {
-    viewBoxWidth: 376,
-    sideMargin: 14,
-    textLeft: 30,
-    textRight: 30,
+    width: 376,
+    margin: 14,
+    textX: 30,
+    textWidth: 300,
     panelTop: 100.82375,
     topPadding: 24,
     bottomPadding: 24,
@@ -1408,15 +1407,11 @@
     copyrightGap: 22
   };
 
-  function canvasContext(font) {
+  function wrapText(text, font, maxWidth) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     ctx.font = font;
-    return ctx;
-  }
 
-  function wrapText(text, font, width) {
-    const ctx = canvasContext(font);
     const words = text.split(/\s+/).filter(Boolean);
     const lines = [];
     let line = "";
@@ -1424,7 +1419,7 @@
     for (const word of words) {
       const candidate = line ? line + " " + word : word;
 
-      if (line && ctx.measureText(candidate).width > width) {
+      if (line && ctx.measureText(candidate).width > maxWidth) {
         lines.push(line);
         line = word;
       } else {
@@ -1455,12 +1450,16 @@
       (weight ? weight + " " : "") +
       size + "px " + family;
 
-    const lines = wrapText(text, font, width);
+    // Marge de sécurité pour les différences de rendu entre Canvas et SVG.
+    const lines = wrapText(text, font, width * 0.94);
 
     el.replaceChildren();
     el.removeAttribute("style");
 
-    el.setAttribute("transform", "translate(" + x + " " + baseline + ")");
+    el.setAttribute(
+      "transform",
+      "translate(" + x + " " + baseline + ")"
+    );
     el.setAttribute("x", "0");
     el.setAttribute("y", "0");
     el.setAttribute("font-family", family);
@@ -1473,61 +1472,50 @@
     lines.forEach((line, index) => {
       const span = document.createElementNS(NS, "tspan");
       span.setAttribute("x", "0");
-      span.setAttribute("y", String(index * size * lineHeight));
+      span.setAttribute(
+        "y",
+        String(index * size * lineHeight)
+      );
       span.textContent = line;
       el.appendChild(span);
     });
 
     return {
-      height: lines.length * size * lineHeight,
-      lineCount: lines.length
+      height: Math.max(size, lines.length * size * lineHeight)
     };
   }
 
-  function getAvailableScreenWidth() {
-    return Math.max(
-      320,
-      window.visualViewport
-        ? window.visualViewport.width
-        : window.innerWidth
+  function setMobileRoot(height) {
+    svg.setAttribute(
+      "viewBox",
+      "0 0 " + M.width + " " + height
     );
+
+    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+
+    // La largeur suit le conteneur, sans dépasser l'écran.
+    svg.setAttribute("width", "100%");
+    svg.setAttribute("height", String(height));
+
+    svg.style.setProperty("display", "block", "important");
+    svg.style.setProperty("width", "100%", "important");
+    svg.style.setProperty("max-width", "100%", "important");
+    svg.style.setProperty("min-width", "0", "important");
+    svg.style.setProperty("height", "auto", "important");
+    svg.style.setProperty("margin-left", "auto", "important");
+    svg.style.setProperty("margin-right", "auto", "important");
+    svg.style.setProperty("padding", "0", "important");
+    svg.style.setProperty("box-sizing", "border-box", "important");
+    svg.style.setProperty("overflow", "hidden", "important");
   }
 
   function mobileLayout() {
-    const screenWidth = getAvailableScreenWidth();
-
-    // Le viewBox mobile est défini dans un repère de 376 unités.
-    // Le SVG occupe la largeur disponible de l'écran.
-    const scale = screenWidth / M.viewBoxWidth;
-
-    svg.setAttribute(
-      "viewBox",
-      "0 0 " + M.viewBoxWidth + " 1200"
-    );
-
-    svg.setAttribute("width", "100%");
-    svg.removeAttribute("height");
-    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
-
-    svg.style.setProperty("display", "block", "important");
-    svg.style.setProperty("width", "100vw", "important");
-    svg.style.setProperty("max-width", "100vw", "important");
-    svg.style.setProperty("min-width", "100vw", "important");
-    svg.style.setProperty("height", "auto", "important");
-    svg.style.setProperty("margin", "0", "important");
-    svg.style.setProperty("padding", "0", "important");
-    svg.style.setProperty("box-sizing", "border-box", "important");
-
-    // Largeur disponible du panneau et du texte.
-    const panelWidth = M.viewBoxWidth - 2 * M.sideMargin;
-    const textWidth = M.viewBoxWidth - M.textLeft - M.textRight;
-
     // Titre.
     const title = rebuildText(
       "text39",
-      M.textLeft,
+      M.textX,
       M.panelTop + M.topPadding,
-      textWidth,
+      M.textWidth,
       M.titleSize,
       M.titleLineHeight,
       "Leelawadee UI, Arial, sans-serif",
@@ -1535,7 +1523,7 @@
       "normal"
     );
 
-    // Corps.
+    // Corps de l'article.
     const bodyBaseline =
       M.panelTop +
       M.topPadding +
@@ -1544,9 +1532,9 @@
 
     const body = rebuildText(
       "text41",
-      M.textLeft,
+      M.textX,
       bodyBaseline,
-      textWidth,
+      M.textWidth,
       M.bodySize,
       M.bodyLineHeight,
       "Arial, sans-serif",
@@ -1562,9 +1550,9 @@
 
     const source = rebuildText(
       "text43",
-      M.textLeft,
+      M.textX,
       sourceBaseline,
-      textWidth,
+      M.textWidth,
       M.sourceSize,
       M.sourceLineHeight,
       "Calibri, Arial, sans-serif",
@@ -1580,9 +1568,9 @@
 
     const copyright = rebuildText(
       "text38",
-      M.textLeft,
+      M.textX,
       copyrightBaseline,
-      textWidth,
+      M.textWidth,
       M.copyrightSize,
       M.copyrightLineHeight,
       "Leelawadee UI, Arial, sans-serif",
@@ -1590,19 +1578,25 @@
       "normal"
     );
 
-    // Hauteur du panneau calculée à partir de tout son contenu.
     const contentBottom =
       copyrightBaseline + copyright.height;
 
-    const panelHeight =
-      contentBottom + M.bottomPadding - M.panelTop;
+    const panelHeight = Math.ceil(
+      contentBottom +
+      M.bottomPadding -
+      M.panelTop
+    );
 
-    panel.setAttribute("x", String(M.sideMargin));
+    // Rectangle ajusté au même repère que le texte.
+    panel.setAttribute("x", String(M.margin));
     panel.setAttribute("y", String(M.panelTop + 10));
-    panel.setAttribute("width", String(panelWidth));
+    panel.setAttribute(
+      "width",
+      String(M.width - 2 * M.margin)
+    );
     panel.setAttribute("height", String(panelHeight));
 
-    // Les décorations de l'article sont masquées, pas le bandeau.
+    // Masquer les décorations de l'article, sans toucher au bandeau.
     article.querySelectorAll("path").forEach(path => {
       if (!path.hasAttribute("data-display-original")) {
         path.setAttribute(
@@ -1615,29 +1609,8 @@
       path.setAttribute("display", "none");
     });
 
-    const totalHeight = Math.ceil(contentBottom + 35);
-
-    svg.setAttribute(
-      "viewBox",
-      "0 0 " + M.viewBoxWidth + " " + totalHeight
-    );
-
-    // Conserver la proportion de 376 unités pour la largeur,
-    // et adapter la hauteur à la longueur réelle du texte.
-    svg.style.setProperty("height", "auto", "important");
-
-    // Évite que le calcul de largeur reste bloqué sur les dimensions
-    // historiques de 1590 × 725.
-    svg.setAttribute("width", "100%");
-    svg.removeAttribute("height");
-
-    return {
-      scale,
-      screenWidth,
-      panelWidth,
-      panelHeight,
-      totalHeight
-    };
+    const totalHeight = Math.ceil(contentBottom + 32);
+    setMobileRoot(totalHeight);
   }
 
   function desktopLayout() {
@@ -1673,7 +1646,7 @@
     panel.setAttribute("width", original.panel.width);
     panel.setAttribute("height", original.panel.height);
 
-    Object.keys(original.texts).forEach(id => {
+    textIds.forEach(id => {
       const el = $(id);
       const data = original.texts[id];
 
@@ -1697,7 +1670,7 @@
     });
   }
 
-  // Choix du mode au chargement : pas de retour bureau au défilement.
+  // Verrouillage du mode mobile au chargement.
   if (media.matches) {
     mobileLayout();
   } else {
