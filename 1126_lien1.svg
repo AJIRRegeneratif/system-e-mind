@@ -1803,25 +1803,45 @@
     svg.style.display = "block";
 
     // ========================================================
-    // LOGO : ALIGNÉ À GAUCHE ET CENTRÉ VERTICALEMENT
-    // DANS LE BANDEAU
+    // TITRE DU BANDEAU
     // ========================================================
 
-    if (wrappers.logo) {
+    const titleScale = 1.10;
+    const titleTargetX = 120;
+    const titleTargetY = 60;
+
+    move(
+      wrappers.title,
+      titleTargetX - 208.723 * titleScale,
+      titleTargetY - 22.300 * titleScale,
+      titleScale
+    );
+
+    // ========================================================
+    // LOGO : POSITIONNÉ À GAUCHE DU TITRE
+    // ET CENTRÉ VERTICALEMENT SUR CELUI-CI
+    // ========================================================
+
+    if (wrappers.logo && wrappers.title) {
       try {
         const logoBounds = wrappers.logo.getBBox();
+        const titleBounds = wrappers.title.getBBox();
 
         const logoScale = 1;
+        const logoGap = 24;
 
-        const bannerLeft = 14.046;
-        const bannerTop = -171.33;
-        const bannerHeight = 125;
+        const titleVisualHeight =
+          titleBounds.height * titleScale;
 
-        const logoTargetX = bannerLeft;
+        const logoTargetX =
+          titleTargetX -
+          logoGap -
+          logoBounds.width * logoScale;
 
         const logoTargetY =
-          bannerTop +
-          (bannerHeight - logoBounds.height * logoScale) / 2;
+          titleTargetY +
+          (titleVisualHeight -
+            logoBounds.height * logoScale) / 2;
 
         move(
           wrappers.logo,
@@ -1836,66 +1856,31 @@
     }
 
     // ========================================================
-    // TITRE DU BANDEAU
+    // SOUS-TITRE : ÉCHELLE 1.30 ET ESPACEMENT DE 100
     // ========================================================
 
-    const titleScale = 1.10;
-    const titleTargetX = 120;
-    const titleTargetY = 60;
-
-    // SOUS-TITRE : ÉCHELLE DOUBLÉE ET ESPACEMENT DE 80
     const subtitleScale = 1.30;
-    const subtitleGap = 80;
+    const subtitleGap = 100;
 
     if (wrappers.title && wrappers.subtitle) {
       try {
         const titleBounds = wrappers.title.getBBox();
         const subtitleBounds = wrappers.subtitle.getBBox();
 
-        // Hauteur réelle du titre après mise à l'échelle
-        const titleHeight = titleBounds.height * titleScale;
-
-        // Hauteur réelle du sous-titre après mise à l'échelle
-        const subtitleHeight = subtitleBounds.height * subtitleScale;
-
-        // Centre vertical du titre
-        const titleCenterY =
-          titleTargetY + titleHeight / 2;
-
-        // Alignement vertical des centres
-        const subtitleTargetY =
-          titleCenterY - subtitleHeight / 2;
-
-        // POSITION DU TITRE
-        move(
-          wrappers.title,
-          titleTargetX - titleBounds.x * titleScale,
-          titleTargetY - titleBounds.y * titleScale,
-          titleScale
-        );
-
-        // POSITION HORIZONTALE DU SOUS-TITRE
         const subtitleTargetX =
           titleTargetX +
           titleBounds.width * titleScale +
           subtitleGap;
 
-        // POSITION DU SOUS-TITRE
+        const subtitleTargetY = titleTargetY;
+
         move(
           wrappers.subtitle,
           subtitleTargetX - subtitleBounds.x * subtitleScale,
           subtitleTargetY - subtitleBounds.y * subtitleScale,
           subtitleScale
         );
-
       } catch (error) {
-        move(
-          wrappers.title,
-          titleTargetX - 208.723 * titleScale,
-          titleTargetY - 22.300 * titleScale,
-          titleScale
-        );
-
         move(
           wrappers.subtitle,
           120 - 1010.446 * subtitleScale,
@@ -1905,7 +1890,10 @@
       }
     }
 
+    // ========================================================
     // RECTANGLE DU BANDEAU
+    // ========================================================
+
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "-173.095");
@@ -1920,7 +1908,10 @@
       1
     );
 
+    // ========================================================
     // POSITIONNEMENT DE L'ARTICLE
+    // ========================================================
+
     const articleStart = 190;
 
     articles.forEach((a, i) => {
@@ -1932,7 +1923,10 @@
       );
     });
 
+    // ========================================================
     // LIEN HOME
+    // ========================================================
+
     move(
       wrappers.home,
       Math.min(width - 46, 330) - 1330.750,
