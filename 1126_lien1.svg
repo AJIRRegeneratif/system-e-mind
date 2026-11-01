@@ -1335,32 +1335,55 @@
   </a>
 <script type="application/ecmascript"><![CDATA[
 (function () {
+  "use strict";
+
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
   const XHTML = "http://www.w3.org/1999/xhtml";
-
-  const articles = [
-    {id:"g1", x:3.078, y:90.013}
-  ];
+  const mobileQuery = window.matchMedia("(max-width: 600px)");
 
   const original = {
-    width:"1590",
-    height:"725",
-    viewBox:"0 0 1590 725"
+    width: "1590",
+    height: "725",
+    viewBox: "0 0 1590 725"
   };
 
   const originalBanner = {
-    x:"3.078",
-    y:"-0.765",
-    width:"1439.238",
-    height:"92.063"
+    x: "3.078",
+    y: "-0.765",
+    width: "1439.238",
+    height: "92.063"
   };
 
+  const article = {
+    id: "g1",
+    x: 3.078,
+    y: 90.013
+  };
+
+  const MOBILE = {
+    width: 376,
+    height: 2160,
+    articleX: 14,
+    articleY: 190,
+    textX: 9,
+    textWidth: 338,
+    titleTop: 110,
+    titleBodyGap: 18,
+    bodyReferenceGap: 18,
+    bottomPadding: 24,
+    panelTop: 100.82375
+  };
+
+  function get(id) {
+    return document.getElementById(id);
+  }
+
   function wrap(id, wrapperId) {
-    const element = document.getElementById(id);
+    const element = get(id);
     if (!element) return null;
 
-    let wrapper = document.getElementById(wrapperId);
+    let wrapper = get(wrapperId);
     if (wrapper) return wrapper;
 
     wrapper = document.createElementNS(NS, "g");
@@ -1372,298 +1395,44 @@
     return wrapper;
   }
 
-  const wrappers = {};
+  const wrappers = {
+    article: wrap("g1", "mobile-wrapper-0"),
+    logo: wrap("g41", "mobile-wrapper-logo"),
+    title: wrap("g2", "mobile-wrapper-title"),
+    subtitle: wrap("g3", "mobile-wrapper-subtitle"),
+    home: wrap("a1", "mobile-wrapper-home"),
+    banner: wrap("rect8", "mobile-wrapper-banner-rect")
+  };
 
-  articles.forEach((a, i) => {
-    wrappers[a.id] = wrap(a.id, "mobile-wrapper-" + i);
-  });
+  const banner = get("rect8");
+  const articleGroup = get("g1");
+  const articlePanel = get("rect4");
 
-  wrappers.logo = wrap("g41", "mobile-wrapper-logo");
-  wrappers.title = wrap("g2", "mobile-wrapper-title");
-  wrappers.subtitle = wrap("g3", "mobile-wrapper-subtitle");
-  wrappers.home = wrap("a1", "mobile-wrapper-home");
-
-  // Groupe enveloppe du rectangle du bandeau
-  wrappers.bannerRect = wrap("rect8", "mobile-wrapper-banner-rect");
-
-  const banner = document.getElementById("rect8");
-
-  // Éléments de l'article
-  const articleGroup = document.getElementById("g1");
-  const articlePanel = document.getElementById("rect4");
-  const originalTitle = document.getElementById("text39");
-  const originalBody = document.getElementById("text41");
-  const originalReference = document.getElementById("text43");
+  const originalTitle = get("text39");
+  const originalBody = get("text41");
+  const originalReference = get("text43");
 
   const originalPanelHeight = articlePanel.getAttribute("height");
 
-  const originalTextDisplays = [
-    originalTitle.style.display,
-    originalBody.style.display,
-    originalReference.style.display
+  const originalTextState = [
+    originalTitle.getAttribute("style"),
+    originalBody.getAttribute("style"),
+    originalReference.getAttribute("style"),
+    originalTitle.getAttribute("visibility"),
+    originalBody.getAttribute("visibility"),
+    originalReference.getAttribute("visibility")
   ];
 
-  let titleForeignObject = null;
-  let bodyForeignObject = null;
-  let referenceForeignObject = null;
+  let titleFO = null;
+  let bodyFO = null;
+  let referenceFO = null;
 
-  let titleContainer = null;
-  let bodyContainer = null;
-  let referenceContainer = null;
+  let titleDiv = null;
+  let bodyDiv = null;
+  let referenceDiv = null;
 
+  let layoutFrame = 0;
   let articleTextCreated = false;
-  let resizePending = false;
-
-  const articleTextSettings = {
-    x: 9,
-    top: 110,
-    width: 338,
-    titleBodyGap: 18,
-    bodyReferenceGap: 18,
-    bottomPadding: 24
-  };
-
-  function createTextForeignObject(id, y) {
-    const foreignObject = document.createElementNS(
-      NS,
-      "foreignObject"
-    );
-
-    foreignObject.setAttribute("id", id);
-    foreignObject.setAttribute("x", String(articleTextSettings.x));
-    foreignObject.setAttribute("y", String(y));
-    foreignObject.setAttribute("width", String(articleTextSettings.width));
-
-    // Hauteur provisoire suffisante pour mesurer le contenu.
-    foreignObject.setAttribute("height", "10000");
-
-    const container = document.createElementNS(XHTML, "div");
-
-    container.style.cssText =
-      "display:block;" +
-      "width:" + articleTextSettings.width + "px;" +
-      "box-sizing:border-box;" +
-      "margin:0;" +
-      "padding:0;" +
-      "color:#ffffff;" +
-      "overflow-wrap:break-word;" +
-      "word-wrap:break-word;";
-
-    foreignObject.appendChild(container);
-    articleGroup.appendChild(foreignObject);
-
-    return {
-      foreignObject: foreignObject,
-      container: container
-    };
-  }
-
-  function createMobileArticleText() {
-    if (articleTextCreated) return;
-
-    const titleText = originalTitle.textContent.trim();
-    const bodyText = originalBody.textContent.trim();
-    const referenceText = originalReference.textContent.trim();
-
-    // Titre
-    const titleObject = createTextForeignObject(
-      "mobile-article-title",
-      articleTextSettings.top
-    );
-
-    titleForeignObject = titleObject.foreignObject;
-    titleContainer = titleObject.container;
-
-    titleContainer.textContent = titleText;
-    titleContainer.style.cssText +=
-      "font-family:'Leelawadee UI',Arial,sans-serif;" +
-      "font-size:18.667px;" +
-      "font-weight:bold;" +
-      "line-height:1.25;" +
-      "text-align:justify;";
-
-    // Corps du texte
-    const bodyObject = createTextForeignObject(
-      "mobile-article-body",
-      articleTextSettings.top
-    );
-
-    bodyForeignObject = bodyObject.foreignObject;
-    bodyContainer = bodyObject.container;
-
-    bodyContainer.style.cssText +=
-      "font-family:Arial,sans-serif;" +
-      "font-size:13.333px;" +
-      "font-weight:normal;" +
-      "line-height:1.25;" +
-      "text-align:justify;";
-
-    // Conserver les séparations entre paragraphes présentes dans le SVG.
-    bodyText.split(/\n\s*\n/).forEach(function (paragraphText) {
-      const text = paragraphText.trim();
-      if (!text) return;
-
-      const paragraph = document.createElement("p");
-      paragraph.textContent = text;
-      paragraph.style.cssText =
-        "display:block;" +
-        "margin:0 0 12px 0;" +
-        "padding:0;";
-      bodyContainer.appendChild(paragraph);
-    });
-
-    // Référence bibliographique
-    const referenceObject = createTextForeignObject(
-      "mobile-article-reference",
-      articleTextSettings.top
-    );
-
-    referenceForeignObject = referenceObject.foreignObject;
-    referenceContainer = referenceObject.container;
-
-    referenceContainer.textContent = referenceText;
-    referenceContainer.style.cssText +=
-      "font-family:Calibri,Arial,sans-serif;" +
-      "font-size:10.667px;" +
-      "font-style:italic;" +
-      "font-weight:300;" +
-      "line-height:1.2;" +
-      "text-align:justify;";
-
-    // Masquer les textes SVG d'origine en mode mobile.
-    originalTitle.style.display = "none";
-    originalBody.style.display = "none";
-    originalReference.style.display = "none";
-
-    articleTextCreated = true;
-
-    scheduleArticleTextLayout();
-  }
-
-  function measuredHeight(container) {
-    if (!container) return 0;
-
-    return Math.max(
-      container.scrollHeight,
-      container.getBoundingClientRect().height
-    );
-  }
-
-  function resizeMobileArticleText() {
-    if (
-      !articleTextCreated ||
-      !titleContainer ||
-      !bodyContainer ||
-      !referenceContainer
-    ) {
-      return;
-    }
-
-    const settings = articleTextSettings;
-
-    // 1. Mesurer le titre à sa largeur réelle.
-    const titleHeight = measuredHeight(titleContainer);
-
-    // 2. Placer le corps immédiatement après le titre.
-    const bodyY =
-      settings.top +
-      titleHeight +
-      settings.titleBodyGap;
-
-    bodyForeignObject.setAttribute("y", String(bodyY));
-
-    // 3. Mesurer le corps après son repositionnement.
-    const bodyHeight = measuredHeight(bodyContainer);
-
-    // 4. Placer la référence après le corps.
-    const referenceY =
-      bodyY +
-      bodyHeight +
-      settings.bodyReferenceGap;
-
-    referenceForeignObject.setAttribute(
-      "y",
-      String(referenceY)
-    );
-
-    // 5. Mesurer la référence à sa position définitive.
-    const referenceHeight = measuredHeight(referenceContainer);
-
-    // 6. Calculer la hauteur du panneau jusqu'à la fin de la référence.
-    const panelTop = 100.82375;
-
-    const contentBottom =
-      referenceY +
-      referenceHeight;
-
-    const requiredPanelHeight =
-      contentBottom +
-      settings.bottomPadding -
-      panelTop;
-
-    articlePanel.setAttribute(
-      "height",
-      String(Math.ceil(requiredPanelHeight))
-    );
-
-    // Ajuster la hauteur des zones SVG à leur contenu réel.
-    titleForeignObject.setAttribute(
-      "height",
-      String(Math.ceil(titleHeight) + 2)
-    );
-
-    bodyForeignObject.setAttribute(
-      "height",
-      String(Math.ceil(bodyHeight) + 2)
-    );
-
-    referenceForeignObject.setAttribute(
-      "height",
-      String(Math.ceil(referenceHeight) + 2)
-    );
-  }
-
-  function scheduleArticleTextLayout() {
-    if (resizePending) return;
-
-    resizePending = true;
-
-    requestAnimationFrame(function () {
-      requestAnimationFrame(function () {
-        resizePending = false;
-        resizeMobileArticleText();
-      });
-    });
-  }
-
-  function restoreMobileArticleText() {
-    if (titleForeignObject) {
-      titleForeignObject.remove();
-      titleForeignObject = null;
-    }
-
-    if (bodyForeignObject) {
-      bodyForeignObject.remove();
-      bodyForeignObject = null;
-    }
-
-    if (referenceForeignObject) {
-      referenceForeignObject.remove();
-      referenceForeignObject = null;
-    }
-
-    titleContainer = null;
-    bodyContainer = null;
-    referenceContainer = null;
-    articleTextCreated = false;
-    resizePending = false;
-
-    originalTitle.style.display = originalTextDisplays[0];
-    originalBody.style.display = originalTextDisplays[1];
-    originalReference.style.display = originalTextDisplays[2];
-
-    articlePanel.setAttribute("height", originalPanelHeight);
-  }
 
   function move(wrapper, x, y, scale) {
     if (!wrapper) return;
@@ -1679,36 +1448,302 @@
   function restoreRectangle(element, values) {
     if (!element) return;
 
-    element.setAttribute("x", values.x);
-    element.setAttribute("y", values.y);
-    element.setAttribute("width", values.width);
-    element.setAttribute("height", values.height);
+    Object.keys(values).forEach(function (key) {
+      element.setAttribute(key, values[key]);
+    });
   }
 
-  function layout() {
-    const isMobile = window.matchMedia("(max-width: 600px)").matches;
-
-    if (!isMobile) {
-      svg.setAttribute("width", original.width);
-      svg.setAttribute("height", original.height);
-      svg.setAttribute("viewBox", original.viewBox);
-
-      svg.style.width = "";
-      svg.style.height = "";
-      svg.style.display = "";
-
-      Object.values(wrappers).forEach(w => {
-        if (w) w.removeAttribute("transform");
+  // Reconstitue le texte du SVG en respectant les paragraphes.
+  function extractText(element) {
+    const spans = Array.from(element.children)
+      .filter(function (child) {
+        return child.localName === "tspan";
       });
 
-      restoreRectangle(banner, originalBanner);
+    if (!spans.length) {
+      return element.textContent.trim();
+    }
 
-      restoreMobileArticleText();
+    const paragraphs = [];
+    let currentParagraph = [];
 
-      svg.removeAttribute("preserveAspectRatio");
+    spans.forEach(function (span) {
+      const value = span.textContent
+        .replace(/\s+/g, " ")
+        .trim();
+
+      if (!value) {
+        if (currentParagraph.length) {
+          paragraphs.push(currentParagraph.join(" "));
+          currentParagraph = [];
+        }
+        return;
+      }
+
+      currentParagraph.push(value);
+    });
+
+    if (currentParagraph.length) {
+      paragraphs.push(currentParagraph.join(" "));
+    }
+
+    return paragraphs.join("\n\n");
+  }
+
+  function makeForeignObject(id, y) {
+    const fo = document.createElementNS(NS, "foreignObject");
+
+    fo.setAttribute("id", id);
+    fo.setAttribute("x", String(MOBILE.textX));
+    fo.setAttribute("y", String(y));
+    fo.setAttribute("width", String(MOBILE.textWidth));
+    fo.setAttribute("height", "10000");
+
+    const div = document.createElementNS(XHTML, "div");
+
+    div.style.cssText =
+      "display:block;" +
+      "width:" + MOBILE.textWidth + "px;" +
+      "box-sizing:border-box;" +
+      "margin:0;padding:0;" +
+      "color:#ffffff;" +
+      "overflow-wrap:break-word;" +
+      "word-wrap:break-word;";
+
+    fo.appendChild(div);
+    articleGroup.appendChild(fo);
+
+    return { fo: fo, div: div };
+  }
+
+  function hideOriginalTexts() {
+    [originalTitle, originalBody, originalReference].forEach(
+      function (element) {
+        element.setAttribute("visibility", "hidden");
+      }
+    );
+  }
+
+  function createArticleText() {
+    if (articleTextCreated) return;
+
+    const titleText = extractText(originalTitle);
+    const bodyText = extractText(originalBody);
+    const referenceText = extractText(originalReference);
+
+    // Titre
+    const title = makeForeignObject(
+      "mobile-article-title",
+      MOBILE.titleTop
+    );
+
+    titleFO = title.fo;
+    titleDiv = title.div;
+    titleDiv.textContent = titleText;
+
+    titleDiv.style.cssText +=
+      "font-family:'Leelawadee UI',Arial,sans-serif;" +
+      "font-size:18.667px;" +
+      "font-weight:bold;" +
+      "line-height:1.25;" +
+      "text-align:justify;";
+
+    // Corps
+    const body = makeForeignObject(
+      "mobile-article-body",
+      MOBILE.titleTop
+    );
+
+    bodyFO = body.fo;
+    bodyDiv = body.div;
+
+    bodyDiv.style.cssText +=
+      "font-family:Arial,sans-serif;" +
+      "font-size:13.333px;" +
+      "font-weight:normal;" +
+      "line-height:1.25;" +
+      "text-align:justify;";
+
+    bodyText.split(/\n\s*\n/).forEach(function (paragraphText) {
+      const paragraph = document.createElementNS(XHTML, "p");
+      paragraph.textContent = paragraphText.trim();
+
+      paragraph.style.cssText =
+        "display:block;" +
+        "margin:0 0 12px 0;" +
+        "padding:0;";
+
+      bodyDiv.appendChild(paragraph);
+    });
+
+    // Référence
+    const reference = makeForeignObject(
+      "mobile-article-reference",
+      MOBILE.titleTop
+    );
+
+    referenceFO = reference.fo;
+    referenceDiv = reference.div;
+    referenceDiv.textContent = referenceText;
+
+    referenceDiv.style.cssText +=
+      "font-family:Calibri,Arial,sans-serif;" +
+      "font-size:10.667px;" +
+      "font-style:italic;" +
+      "font-weight:normal;" +
+      "line-height:1.2;" +
+      "text-align:justify;";
+
+    hideOriginalTexts();
+
+    articleTextCreated = true;
+    scheduleArticleLayout();
+  }
+
+  // Mesure la hauteur réelle du contenu HTML, et non celle
+  // de la zone provisoire de 10000 unités du foreignObject.
+  function measureContent(element) {
+    if (!element) return 0;
+
+    return Math.ceil(
+      Math.max(
+        element.scrollHeight,
+        element.getBoundingClientRect().height
+      )
+    );
+  }
+
+  function resizeArticleText() {
+    if (
+      !articleTextCreated ||
+      !titleDiv ||
+      !bodyDiv ||
+      !referenceDiv
+    ) {
       return;
     }
 
+    // Le titre conserve sa position de départ.
+    titleFO.setAttribute("y", String(MOBILE.titleTop));
+
+    // Mesure après mise en page du titre.
+    const titleHeight = measureContent(titleDiv);
+
+    // Le corps est placé après le titre.
+    const bodyY =
+      MOBILE.titleTop +
+      titleHeight +
+      MOBILE.titleBodyGap;
+
+    bodyFO.setAttribute("y", String(bodyY));
+
+    // Le corps est mesuré à sa largeur définitive.
+    const bodyHeight = measureContent(bodyDiv);
+
+    // La référence est placée après le corps.
+    const referenceY =
+      bodyY +
+      bodyHeight +
+      MOBILE.bodyReferenceGap;
+
+    referenceFO.setAttribute("y", String(referenceY));
+
+    const referenceHeight = measureContent(referenceDiv);
+
+    // Ajustement des hauteurs des zones de texte.
+    titleFO.setAttribute("height", String(titleHeight + 2));
+    bodyFO.setAttribute("height", String(bodyHeight + 2));
+    referenceFO.setAttribute("height", String(referenceHeight + 2));
+
+    // Le rectangle se termine après la référence.
+    const contentBottom = referenceY + referenceHeight;
+
+    const panelHeight =
+      contentBottom +
+      MOBILE.bottomPadding -
+      MOBILE.panelTop;
+
+    articlePanel.setAttribute(
+      "height",
+      String(Math.ceil(panelHeight))
+    );
+  }
+
+  function scheduleArticleLayout() {
+    if (layoutFrame) {
+      cancelAnimationFrame(layoutFrame);
+    }
+
+    layoutFrame = requestAnimationFrame(function () {
+      layoutFrame = requestAnimationFrame(function () {
+        layoutFrame = 0;
+        resizeArticleText();
+      });
+    });
+  }
+
+  function restoreArticleText() {
+    if (layoutFrame) {
+      cancelAnimationFrame(layoutFrame);
+      layoutFrame = 0;
+    }
+
+    [titleFO, bodyFO, referenceFO].forEach(function (element) {
+      if (element && element.parentNode) {
+        element.parentNode.removeChild(element);
+      }
+    });
+
+    titleFO = null;
+    bodyFO = null;
+    referenceFO = null;
+
+    titleDiv = null;
+    bodyDiv = null;
+    referenceDiv = null;
+
+    articleTextCreated = false;
+
+    [originalTitle, originalBody, originalReference].forEach(
+      function (element, index) {
+        const style = originalTextState[index];
+
+        if (style === null) element.removeAttribute("style");
+        else element.setAttribute("style", style);
+
+        const visibility = originalTextState[index + 3];
+
+        if (visibility === null) {
+          element.removeAttribute("visibility");
+        } else {
+          element.setAttribute("visibility", visibility);
+        }
+      }
+    );
+
+    articlePanel.setAttribute("height", originalPanelHeight);
+  }
+
+  function desktopLayout() {
+    svg.setAttribute("width", original.width);
+    svg.setAttribute("height", original.height);
+    svg.setAttribute("viewBox", original.viewBox);
+
+    svg.style.width = "";
+    svg.style.height = "";
+    svg.style.display = "";
+
+    Object.values(wrappers).forEach(function (wrapper) {
+      if (wrapper) wrapper.removeAttribute("transform");
+    });
+
+    restoreRectangle(banner, originalBanner);
+    restoreArticleText();
+
+    svg.removeAttribute("preserveAspectRatio");
+  }
+
+  function mobileLayout() {
     svg.setAttribute("width", "376");
     svg.setAttribute("height", "2160");
     svg.setAttribute("viewBox", "0 0 376 2160");
@@ -1718,7 +1753,7 @@
     svg.style.height = "auto";
     svg.style.display = "block";
 
-    // Logo et textes du bandeau
+    // Logo et textes du bandeau.
     move(wrappers.logo, -18.37, -2.58, 1);
 
     move(
@@ -1735,7 +1770,7 @@
       0.65
     );
 
-    // Rectangle du bandeau : dimensions mobiles
+    // Rectangle du bandeau.
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "-173.095");
@@ -1743,28 +1778,22 @@
       banner.setAttribute("height", "125");
     }
 
-    // Déplacement du rectangle du bandeau par son groupe enveloppe
     move(
-      wrappers.bannerRect,
+      wrappers.banner,
       3 - 3.078,
       1 - -0.765,
       1
     );
 
-    // Empilement des articles : logique conservée à l'identique
-    const articleStart = 190;
-    const articleStep = 468;
+    // Positionnement de l'article.
+    move(
+      wrappers.article,
+      MOBILE.articleX - article.x,
+      MOBILE.articleY - article.y,
+      1
+    );
 
-    articles.forEach((a, i) => {
-      move(
-        wrappers[a.id],
-        14 - a.x,
-        articleStart + i * articleStep - a.y,
-        1
-      );
-    });
-
-    // Lien Home
+    // Lien Home.
     move(
       wrappers.home,
       330 - 1330.750,
@@ -1772,13 +1801,30 @@
       1
     );
 
-    // Création et repositionnement dynamique des textes de l'article
-    createMobileArticleText();
-    scheduleArticleTextLayout();
+    createArticleText();
+    scheduleArticleLayout();
+  }
+
+  function layout() {
+    if (mobileQuery.matches) {
+      mobileLayout();
+    } else {
+      desktopLayout();
+    }
   }
 
   layout();
-  window.addEventListener("resize", layout);
+
+  if (typeof mobileQuery.addEventListener === "function") {
+    mobileQuery.addEventListener("change", layout);
+  } else if (typeof mobileQuery.addListener === "function") {
+    mobileQuery.addListener(layout);
+  }
+
+  window.addEventListener("resize", function () {
+    layout();
+  });
+
 })();
 ]]></script>
 </svg>
