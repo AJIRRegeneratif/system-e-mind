@@ -1408,7 +1408,7 @@
   }
 
   // ==========================================================
-  // AJOUT 1 — Préparation du texte principal et du rectangle
+  // AJOUT — Gestion du texte et du rectangle de l'article
   // ==========================================================
 
   const articleGroup = document.getElementById("g1");
@@ -1416,9 +1416,11 @@
   const articleText = document.getElementById("text41");
 
   const originalArticleHeight = articlePanel.getAttribute("height");
+  const originalArticleWidth = articlePanel.getAttribute("width");
+  const originalArticleX = articlePanel.getAttribute("x");
   const originalArticleTextDisplay = articleText.style.display;
 
-  // On conserve le texte original avant de masquer son affichage SVG.
+  // Conservation du texte original
   const originalArticleContent = articleText.textContent;
 
   let mobileTextObject = null;
@@ -1431,9 +1433,8 @@
       mobileTextContainer = null;
     }
 
-    // La zone HTML est ajoutée dans g1 : elle suit son groupe enveloppe.
     mobileTextObject = document.createElementNS(
-      "http://www.w3.org/2000/svg",
+      NS,
       "foreignObject"
     );
 
@@ -1468,7 +1469,7 @@
       "overflow-wrap:break-word;" +
       "word-break:normal;";
 
-    // Les doubles retours à la ligne d'origine délimitent les paragraphes.
+    // Les doubles retours à la ligne délimitent les paragraphes
     const paragraphs = originalArticleContent
       .replace(/\r/g, "")
       .split(/\n\s*\n/);
@@ -1494,18 +1495,15 @@
     mobileTextObject.appendChild(mobileTextContainer);
     articleGroup.appendChild(mobileTextObject);
 
-    // Le texte SVG d'origine est masqué uniquement sur mobile.
+    // Masquage du texte SVG original sur mobile
     articleText.style.display = "none";
   }
 
   function resizeMobileArticlePanel() {
-    if (!mobileTextObject || !mobileTextContainer) return;
+    if (!mobileTextObject || !mobileTextContainer || !articlePanel) return;
 
-    // Hauteur réelle du contenu HTML, exprimée dans son propre repère.
     const contentHeight = mobileTextContainer.scrollHeight;
 
-    // Le rectangle visible commence à y=100.82375 dans g1.
-    // Le texte mobile commence à y=160 dans le même repère.
     const textY = 160;
     const panelY = 100.82375;
     const bottomPadding = 24;
@@ -1513,6 +1511,11 @@
     const requiredHeight =
       textY + contentHeight + bottomPadding - panelY;
 
+    // Largeur et position du rectangle sur mobile
+    articlePanel.setAttribute("x", "3.889");
+    articlePanel.setAttribute("width", "347.75");
+
+    // Hauteur calculée selon la hauteur réelle du texte
     articlePanel.setAttribute(
       "height",
       String(Math.ceil(requiredHeight))
@@ -1532,8 +1535,15 @@
     }
 
     articleText.style.display = originalArticleTextDisplay;
+
     articlePanel.setAttribute("height", originalArticleHeight);
+    articlePanel.setAttribute("width", originalArticleWidth);
+    articlePanel.setAttribute("x", originalArticleX);
   }
+
+  // ==========================================================
+  // FIN DES AJOUTS
+  // ==========================================================
 
   function layout() {
     const isMobile = window.matchMedia("(max-width: 600px)").matches;
@@ -1553,7 +1563,7 @@
 
       restoreRectangle(banner, originalBanner);
 
-      // AJOUT 2 — Restauration du texte et du rectangle ordinateur.
+      // Restauration de l'article sur ordinateur
       restoreMobileArticleText();
 
       svg.removeAttribute("preserveAspectRatio");
@@ -1571,12 +1581,14 @@
 
     // Logo et textes du bandeau
     move(wrappers.logo, -18.37, -2.58, 1);
+
     move(
       wrappers.title,
       120 - 208.723 * 0.55,
       60 - 22.300 * 0.55,
       0.55
     );
+
     move(
       wrappers.subtitle,
       120 - 1010.446 * 0.65,
@@ -1613,14 +1625,6 @@
       );
     });
 
-    // AJOUT 3 — Création du texte mobile et redimensionnement du panneau.
-    createMobileArticleText();
-
-    requestAnimationFrame(function () {
-      if (!window.matchMedia("(max-width: 600px)").matches) return;
-      resizeMobileArticlePanel();
-    });
-
     // Lien Home
     move(
       wrappers.home,
@@ -1628,6 +1632,14 @@
       2060 - 61.099,
       1
     );
+
+    // Création et ajustement du texte mobile
+    createMobileArticleText();
+
+    requestAnimationFrame(function () {
+      if (!window.matchMedia("(max-width: 600px)").matches) return;
+      resizeMobileArticlePanel();
+    });
   }
 
   layout();
