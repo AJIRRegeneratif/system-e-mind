@@ -1368,9 +1368,9 @@
     articleY: 190,
     textX: 9,
     textWidth: 338,
-    titleTop: 110,
-    titleBodyGap: 18,
-    bodyReferenceGap: 18,
+    titleTop: 120,
+    titleBodyGap: 6,
+    bodyReferenceGap: 6,
     bottomPadding: 24,
     panelTop: 100.82375
   };
@@ -1453,7 +1453,7 @@
     });
   }
 
-  // Reconstitue le texte du SVG en respectant les paragraphes.
+  // Reconstitution du texte à partir des tspan du SVG.
   function extractText(element) {
     const spans = Array.from(element.children)
       .filter(function (child) {
@@ -1600,8 +1600,6 @@
     scheduleArticleLayout();
   }
 
-  // Mesure la hauteur réelle du contenu HTML, et non celle
-  // de la zone provisoire de 10000 unités du foreignObject.
   function measureContent(element) {
     if (!element) return 0;
 
@@ -1623,13 +1621,12 @@
       return;
     }
 
-    // Le titre conserve sa position de départ.
+    // 1. Position et mesure du titre.
     titleFO.setAttribute("y", String(MOBILE.titleTop));
 
-    // Mesure après mise en page du titre.
     const titleHeight = measureContent(titleDiv);
 
-    // Le corps est placé après le titre.
+    // 2. Position du corps calculée depuis la hauteur du titre.
     const bodyY =
       MOBILE.titleTop +
       titleHeight +
@@ -1637,10 +1634,10 @@
 
     bodyFO.setAttribute("y", String(bodyY));
 
-    // Le corps est mesuré à sa largeur définitive.
+    // 3. Mesure du corps.
     const bodyHeight = measureContent(bodyDiv);
 
-    // La référence est placée après le corps.
+    // 4. Position de la référence calculée depuis la hauteur du corps.
     const referenceY =
       bodyY +
       bodyHeight +
@@ -1648,14 +1645,14 @@
 
     referenceFO.setAttribute("y", String(referenceY));
 
+    // 5. Mesure de la référence.
     const referenceHeight = measureContent(referenceDiv);
 
-    // Ajustement des hauteurs des zones de texte.
     titleFO.setAttribute("height", String(titleHeight + 2));
     bodyFO.setAttribute("height", String(bodyHeight + 2));
     referenceFO.setAttribute("height", String(referenceHeight + 2));
 
-    // Le rectangle se termine après la référence.
+    // 6. Hauteur du rectangle calculée jusqu'à la fin de la référence.
     const contentBottom = referenceY + referenceHeight;
 
     const panelHeight =
@@ -1708,8 +1705,11 @@
       function (element, index) {
         const style = originalTextState[index];
 
-        if (style === null) element.removeAttribute("style");
-        else element.setAttribute("style", style);
+        if (style === null) {
+          element.removeAttribute("style");
+        } else {
+          element.setAttribute("style", style);
+        }
 
         const visibility = originalTextState[index + 3];
 
@@ -1805,7 +1805,8 @@
     scheduleArticleLayout();
   }
 
-  function layout() {
+  // Bascule uniquement lors d'un véritable changement de breakpoint.
+  function breakpointChanged() {
     if (mobileQuery.matches) {
       mobileLayout();
     } else {
@@ -1813,16 +1814,21 @@
     }
   }
 
-  layout();
+  // Initialisation unique.
+  breakpointChanged();
 
+  // Changement ordinateur/mobile uniquement.
   if (typeof mobileQuery.addEventListener === "function") {
-    mobileQuery.addEventListener("change", layout);
-  } else if (typeof mobileQuery.addListener === "function") {
-    mobileQuery.addListener(layout);
+    mobileQuery.addEventListener("change", breakpointChanged);
+  } else {
+    mobileQuery.addListener(breakpointChanged);
   }
 
+  // Un resize en restant mobile ne doit jamais réactiver desktopLayout().
   window.addEventListener("resize", function () {
-    layout();
+    if (mobileQuery.matches) {
+      scheduleArticleLayout();
+    }
   });
 
 })();
