@@ -1416,6 +1416,7 @@
   const articleTitle = document.getElementById("text39");
   const articleText = document.getElementById("text41");
   const articleReference = document.getElementById("text43");
+  const articleCopyright = document.getElementById("text38");
 
   const originalArticleHeight = articlePanel.getAttribute("height");
   const originalArticleWidth = articlePanel.getAttribute("width");
@@ -1424,10 +1425,16 @@
   const originalTitleDisplay = articleTitle.style.display;
   const originalTextDisplay = articleText.style.display;
   const originalReferenceDisplay = articleReference.style.display;
+  const originalCopyrightDisplay = articleCopyright
+    ? articleCopyright.style.display
+    : "";
 
   const originalTitleContent = articleTitle.textContent;
   const originalArticleContent = articleText.textContent;
   const originalReferenceContent = articleReference.textContent;
+  const originalCopyrightContent = articleCopyright
+    ? articleCopyright.textContent
+    : "";
 
   let mobileTitleObject = null;
   let mobileTitleContainer = null;
@@ -1437,6 +1444,9 @@
 
   let mobileReferenceObject = null;
   let mobileReferenceContainer = null;
+
+  let mobileCopyrightObject = null;
+  let mobileCopyrightContainer = null;
 
   let currentMobileWidth = 376;
   let resizeFrame = null;
@@ -1510,7 +1520,7 @@
   function createMobileArticleText() {
     if (mobileTitleObject) return;
 
-    // TITRE
+    // TITRE : POLICE DOUBLÉE
     const title = createTextObject(
       "mobile-article-title",
       110,
@@ -1527,7 +1537,7 @@
     mobileTitleObject = title.object;
     mobileTitleContainer = title.container;
 
-    // CORPS DE L'ARTICLE
+    // CORPS DE L'ARTICLE : POLICE DOUBLÉE
     const body = createTextObject(
       "mobile-article-text",
       160,
@@ -1559,11 +1569,11 @@
     mobileTextObject = body.object;
     mobileTextContainer = body.container;
 
-    // RÉFÉRENCE
+    // RÉFÉRENCE BIBLIOGRAPHIQUE : POLICE DOUBLÉE
     const reference = createTextObject(
       "mobile-article-reference",
       0,
-      21,
+      21.3334,
       1.2,
       "Calibri,Arial,sans-serif",
       "300",
@@ -1576,9 +1586,34 @@
     mobileReferenceObject = reference.object;
     mobileReferenceContainer = reference.container;
 
+    // COPYRIGHT : POLICE DOUBLÉE
+    const copyright = createTextObject(
+      "mobile-article-copyright",
+      0,
+      21.3334,
+      1.25,
+      "'Leelawadee UI',Arial,sans-serif",
+      "300",
+      "normal"
+    );
+
+    copyright.container.textContent =
+      originalCopyrightContent.replace(/\s+/g, " ").trim();
+
+    copyright.container.style.textAlign = "right";
+    copyright.container.style.textAlignLast = "right";
+
+    mobileCopyrightObject = copyright.object;
+    mobileCopyrightContainer = copyright.container;
+
+    // Masquage des textes SVG originaux en mode mobile.
     articleTitle.style.display = "none";
     articleText.style.display = "none";
     articleReference.style.display = "none";
+
+    if (articleCopyright) {
+      articleCopyright.style.display = "none";
+    }
   }
 
   function setMobileTextWidth(width) {
@@ -1590,7 +1625,8 @@
     [
       mobileTitleObject,
       mobileTextObject,
-      mobileReferenceObject
+      mobileReferenceObject,
+      mobileCopyrightObject
     ].forEach(function (element) {
       if (!element) return;
 
@@ -1600,7 +1636,8 @@
     [
       mobileTitleContainer,
       mobileTextContainer,
-      mobileReferenceContainer
+      mobileReferenceContainer,
+      mobileCopyrightContainer
     ].forEach(function (container) {
       if (!container) return;
 
@@ -1615,14 +1652,16 @@
     if (
       !mobileTitleContainer ||
       !mobileTextContainer ||
-      !mobileReferenceContainer
+      !mobileReferenceContainer ||
+      !mobileCopyrightContainer
     ) return;
 
     const titleY = 110;
     const gapTitleBody = 18;
     const gapBodyReference = 18;
+    const gapReferenceCopyright = 18;
 
-    // Mesure du titre après retour à la ligne.
+    // MESURE DU TITRE
     const titleHeight =
       mobileTitleContainer.getBoundingClientRect().height;
 
@@ -1631,12 +1670,12 @@
       String(Math.ceil(titleHeight) + 2)
     );
 
-    // Positionnement du corps.
+    // POSITIONNEMENT DU CORPS
     const bodyY = titleY + titleHeight + gapTitleBody;
 
     mobileTextObject.setAttribute("y", String(bodyY));
 
-    // Mesure du corps.
+    // MESURE DU CORPS
     const bodyHeight =
       mobileTextContainer.getBoundingClientRect().height;
 
@@ -1645,7 +1684,7 @@
       String(Math.ceil(bodyHeight) + 2)
     );
 
-    // Positionnement de la référence.
+    // POSITIONNEMENT DE LA RÉFÉRENCE
     const referenceY =
       bodyY + bodyHeight + gapBodyReference;
 
@@ -1654,7 +1693,7 @@
       String(referenceY)
     );
 
-    // Mesure de la référence.
+    // MESURE DE LA RÉFÉRENCE
     const referenceHeight =
       mobileReferenceContainer.getBoundingClientRect().height;
 
@@ -1663,19 +1702,37 @@
       String(Math.ceil(referenceHeight) + 2)
     );
 
-    // Hauteur du panneau selon le contenu réel.
+    // POSITIONNEMENT DU COPYRIGHT SOUS LA RÉFÉRENCE
+    const copyrightY =
+      referenceY + referenceHeight + gapReferenceCopyright;
+
+    mobileCopyrightObject.setAttribute(
+      "y",
+      String(copyrightY)
+    );
+
+    // MESURE DU COPYRIGHT
+    const copyrightHeight =
+      mobileCopyrightContainer.getBoundingClientRect().height;
+
+    mobileCopyrightObject.setAttribute(
+      "height",
+      String(Math.ceil(copyrightHeight) + 2)
+    );
+
+    // HAUTEUR DU PANNEAU SELON LE CONTENU RÉEL
     const panelTop = 100.82375;
     const bottomPadding = 24;
 
     const totalHeight =
-      referenceY + referenceHeight + bottomPadding - panelTop;
+      copyrightY + copyrightHeight + bottomPadding - panelTop;
 
     articlePanel.setAttribute(
       "height",
       String(Math.ceil(totalHeight))
     );
 
-    // Hauteur du document SVG.
+    // HAUTEUR DU DOCUMENT SVG
     const articleBottom =
       190 + 100.82375 + Math.ceil(totalHeight) + 30;
 
@@ -1709,7 +1766,8 @@
     [
       mobileTitleObject,
       mobileTextObject,
-      mobileReferenceObject
+      mobileReferenceObject,
+      mobileCopyrightObject
     ].forEach(function (element) {
       if (element) element.remove();
     });
@@ -1723,9 +1781,16 @@
     mobileReferenceObject = null;
     mobileReferenceContainer = null;
 
+    mobileCopyrightObject = null;
+    mobileCopyrightContainer = null;
+
     articleTitle.style.display = originalTitleDisplay;
     articleText.style.display = originalTextDisplay;
     articleReference.style.display = originalReferenceDisplay;
+
+    if (articleCopyright) {
+      articleCopyright.style.display = originalCopyrightDisplay;
+    }
 
     articlePanel.setAttribute("height", originalArticleHeight);
     articlePanel.setAttribute("width", originalArticleWidth);
@@ -1751,7 +1816,7 @@
     svg.style.height = "2160px";
     svg.style.display = "block";
 
-    // Logo et textes du bandeau.
+    // LOGO ET TEXTES DU BANDEAU
     move(wrappers.logo, -18.37, -2.58, 1);
 
     move(
@@ -1768,7 +1833,7 @@
       0.65
     );
 
-    // Rectangle du bandeau.
+    // RECTANGLE DU BANDEAU
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "-173.095");
@@ -1783,7 +1848,7 @@
       1
     );
 
-    // Positionnement de l'article.
+    // POSITIONNEMENT DE L'ARTICLE
     const articleStart = 190;
 
     articles.forEach((a, i) => {
@@ -1795,7 +1860,7 @@
       );
     });
 
-    // Lien Home.
+    // LIEN HOME
     move(
       wrappers.home,
       Math.min(width - 46, 330) - 1330.750,
