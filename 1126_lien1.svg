@@ -1333,50 +1333,27 @@
        id="path4"
        sodipodi:nodetypes="cccc" />
   </a>
-  <script type="text/ecmascript"><![CDATA[
+ <script type="application/ecmascript"><![CDATA[
 (function () {
-  "use strict";
-
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
-  const XHTML = "http://www.w3.org/1999/xhtml";
 
-  const mobileQuery = window.matchMedia("(max-width: 600px)");
-
-  const original = {
-    width: svg.getAttribute("width"),
-    height: svg.getAttribute("height"),
-    viewBox: svg.getAttribute("viewBox"),
-    preserveAspectRatio: svg.getAttribute("preserveAspectRatio"),
-    style: svg.getAttribute("style")
-  };
-
-  const ids = [
-    "rect8", "g41", "g1", "rect4",
-    "text11", "text21", "text15", "text16",
-    "text39", "text41", "text43", "text38"
+  const articles = [
+    {id:"g1", x:3.078, y:90.013}
   ];
 
-  const elements = {};
-  const originalAttributes = {};
+  const original = {
+    width:"1590",
+    height:"725",
+    viewBox:"0 0 1590 725"
+  };
 
-  ids.forEach(function (id) {
-    const el = document.getElementById(id);
-    if (!el) throw new Error("Élément SVG absent : " + id);
-
-    elements[id] = el;
-    originalAttributes[id] = {
-      transform: el.getAttribute("transform"),
-      x: el.getAttribute("x"),
-      y: el.getAttribute("y"),
-      width: el.getAttribute("width"),
-      height: el.getAttribute("height"),
-      style: el.getAttribute("style"),
-      display: el.getAttribute("display")
-    };
-  });
-
-  const originalText41 = elements.text41.innerHTML;
+  const originalBanner = {
+    x:"3.078",
+    y:"-0.765",
+    width:"1439.238",
+    height:"92.063"
+  };
 
   function wrap(id, wrapperId) {
     const element = document.getElementById(id);
@@ -1394,19 +1371,25 @@
     return wrapper;
   }
 
-  const wrappers = {
-    banner: wrap("rect8", "mobile-wrapper-banner"),
-    logo: wrap("g41", "mobile-wrapper-logo"),
-    article: wrap("g1", "mobile-wrapper-article"),
-    title: wrap("text39", "mobile-wrapper-article-title"),
-    header1: wrap("text11", "mobile-wrapper-header1"),
-    header2: wrap("text21", "mobile-wrapper-header2"),
-    header3: wrap("text15", "mobile-wrapper-header3"),
-    header4: wrap("text16", "mobile-wrapper-header4")
-  };
+  const wrappers = {};
+
+  articles.forEach((a, i) => {
+    wrappers[a.id] = wrap(a.id, "mobile-wrapper-" + i);
+  });
+
+  wrappers.logo = wrap("g41", "mobile-wrapper-logo");
+  wrappers.title = wrap("g2", "mobile-wrapper-title");
+  wrappers.subtitle = wrap("g3", "mobile-wrapper-subtitle");
+  wrappers.home = wrap("a1", "mobile-wrapper-home");
+
+  // Groupes enveloppes du rectangle
+  wrappers.bannerRect = wrap("rect8", "mobile-wrapper-banner-rect");
+
+  const banner = document.getElementById("rect8");
 
   function move(wrapper, x, y, scale) {
     if (!wrapper) return;
+
     scale = scale || 1;
 
     wrapper.setAttribute(
@@ -1415,280 +1398,100 @@
     );
   }
 
-  function restoreAttribute(element, name, value) {
-    if (value === null) element.removeAttribute(name);
-    else element.setAttribute(name, value);
-  }
+  function restoreRectangle(element, values) {
+    if (!element) return;
 
-  function removeShapeInside(element) {
-    const style = element.getAttribute("style") || "";
-    const cleaned = style
-      .replace(/shape-inside\s*:[^;]+;?/gi, "")
-      .replace(/;;+/g, ";");
-
-    element.setAttribute("style", cleaned);
-  }
-
-  function getParagraphs() {
-    const paragraphs = [];
-    let current = "";
-
-    Array.from(elements.text41.children).forEach(function (span) {
-      const value = span.textContent || "";
-
-      if (value.trim() === "") {
-        if (current.trim()) paragraphs.push(current.trim());
-        current = "";
-      } else {
-        current += (current ? " " : "") +
-          value.replace(/\s+/g, " ").trim();
-      }
-    });
-
-    if (current.trim()) paragraphs.push(current.trim());
-
-    return paragraphs;
-  }
-
-  let foreignObject = null;
-  let bodyHTML = null;
-  let sourceObject = null;
-  let copyrightObject = null;
-
-  function createHTMLBlock(id, x, y, width, fontSize, lineHeight) {
-    const fo = document.createElementNS(NS, "foreignObject");
-    fo.setAttribute("id", id);
-    fo.setAttribute("x", String(x));
-    fo.setAttribute("y", String(y));
-    fo.setAttribute("width", String(width));
-
-    const div = document.createElementNS(XHTML, "div");
-    div.setAttribute("xmlns", XHTML);
-    div.style.cssText =
-      "box-sizing:border-box;width:100%;margin:0;padding:0;" +
-      "font-family:Arial,sans-serif;" +
-      "font-size:" + fontSize + "px;" +
-      "line-height:" + lineHeight + ";" +
-      "color:#fff;text-align:left;" +
-      "white-space:normal;overflow-wrap:break-word;" +
-      "word-break:normal;";
-
-    fo.appendChild(div);
-    elements.g1.appendChild(fo);
-
-    return { object: fo, content: div };
-  }
-
-  function createMobileText() {
-    if (foreignObject) foreignObject.remove();
-    if (sourceObject) sourceObject.remove();
-    if (copyrightObject) copyrightObject.remove();
-
-    const body = createHTMLBlock(
-      "mobile-body-text", 5, 0, 338, 13.333, 1.35
-    );
-
-    foreignObject = body.object;
-    bodyHTML = body.content;
-
-    getParagraphs().forEach(function (paragraph, index, all) {
-      const p = document.createElementNS(XHTML, "p");
-      p.textContent = paragraph;
-      p.style.margin = index === all.length - 1 ? "0" : "0 0 12px 0";
-      p.style.padding = "0";
-      bodyHTML.appendChild(p);
-    });
-
-    const source = createHTMLBlock(
-      "mobile-source-text", 5, 0, 338, 10.5, 1.25
-    );
-
-    sourceObject = source.object;
-    source.content.textContent = elements.text43.textContent.trim();
-
-    const copyright = createHTMLBlock(
-      "mobile-copyright-text", 5, 0, 338, 9.5, 1.2
-    );
-
-    copyrightObject = copyright.object;
-    copyright.content.textContent = elements.text38.textContent.trim();
-
-    elements.text41.style.display = "none";
-    elements.text43.style.display = "none";
-    elements.text38.style.display = "none";
-  }
-
-  function layoutMobile() {
-    svg.setAttribute("width", "376");
-    svg.setAttribute("height", "900");
-    svg.setAttribute("viewBox", "0 0 376 900");
-    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
-    svg.style.width = "100%";
-    svg.style.height = "auto";
-    svg.style.maxWidth = "100%";
-    svg.style.display = "block";
-
-    /* BANDEAU : dimensions et position */
-    elements.rect8.removeAttribute("transform");
-    elements.rect8.setAttribute("x", "14");
-    elements.rect8.setAttribute("y", "8");
-    elements.rect8.setAttribute("width", "348");
-    elements.rect8.setAttribute("height", "92");
-
-    wrappers.banner.removeAttribute("transform");
-
-    /* LOGO */
-    move(wrappers.logo, 18, 13, 0.105);
-
-    /* TEXTES DU BANDEAU */
-    const headerPositions = [
-      ["header1", 96, 31, 17],
-      ["header2", 96, 45, 9],
-      ["header3", 96, 66, 14],
-      ["header4", 96, 81, 9]
-    ];
-
-    headerPositions.forEach(function (item) {
-      const wrapper = wrappers[item[0]];
-      const el = wrapper.firstElementChild;
-
-      el.style.fontSize = item[3] + "px";
-      el.style.textAnchor = "start";
-
-      move(wrapper, item[1], item[2], 1);
-    });
-
-    /* ARTICLE */
-    move(wrappers.article, 14, 120, 1);
-
-    elements.g1.removeAttribute("transform");
-
-    elements.rect4.setAttribute("x", "0");
-    elements.rect4.setAttribute("y", "0");
-    elements.rect4.setAttribute("width", "348");
-    elements.rect4.setAttribute("height", "500");
-
-    /* TITRE DE L'ARTICLE */
-    const title = elements.text39;
-    removeShapeInside(title);
-    title.style.textAnchor = "start";
-    title.style.fontSize = "17px";
-    title.style.whiteSpace = "normal";
-
-    title.setAttribute("transform", "translate(5 28)");
-
-    /* TEXTE PRINCIPAL */
-    createMobileText();
-
-    /* Masquer les éléments SVG remplacés par les blocs HTML */
-    elements.text43.style.display = "none";
-    elements.text38.style.display = "none";
-
-    ["path73", "path18", "path50"].forEach(function (id) {
-      const el = document.getElementById(id);
-      if (el) el.style.display = "none";
-    });
-
-    requestAnimationFrame(function () {
-      if (!mobileQuery.matches || !foreignObject) return;
-
-      const titleHeight = title.getBBox().height;
-      const bodyY = Math.max(42, titleHeight + 20);
-
-      foreignObject.setAttribute("y", String(bodyY));
-
-      const bodyHeight =
-        bodyHTML.getBoundingClientRect().height *
-        (376 / svg.getBoundingClientRect().width);
-
-      const sourceY = bodyY + bodyHeight + 20;
-      sourceObject.setAttribute("y", String(sourceY));
-
-      sourceObject.setAttribute(
-        "height",
-        String(sourceObject.firstElementChild.getBoundingClientRect().height + 4)
-      );
-
-      const sourceHeight =
-        sourceObject.firstElementChild.getBoundingClientRect().height *
-        (376 / svg.getBoundingClientRect().width);
-
-      const copyrightY = sourceY + sourceHeight + 16;
-      copyrightObject.setAttribute("y", String(copyrightY));
-
-      const copyrightHeight =
-        copyrightObject.firstElementChild.getBoundingClientRect().height *
-        (376 / svg.getBoundingClientRect().width);
-
-      const totalHeight = copyrightY + copyrightHeight + 22;
-
-      elements.rect4.setAttribute("height", String(totalHeight));
-
-      svg.setAttribute(
-        "viewBox",
-        "0 0 376 " + (120 + totalHeight + 20)
-      );
-
-      svg.setAttribute("height", String(120 + totalHeight + 20));
-    });
-  }
-
-  function layoutDesktop() {
-    if (foreignObject) foreignObject.remove();
-    if (sourceObject) sourceObject.remove();
-    if (copyrightObject) copyrightObject.remove();
-
-    foreignObject = null;
-    sourceObject = null;
-    copyrightObject = null;
-
-    restoreAttribute(svg, "width", original.width);
-    restoreAttribute(svg, "height", original.height);
-    restoreAttribute(svg, "viewBox", original.viewBox);
-    restoreAttribute(svg, "preserveAspectRatio", original.preserveAspectRatio);
-    restoreAttribute(svg, "style", original.style);
-
-    ids.forEach(function (id) {
-      const el = elements[id];
-      const values = originalAttributes[id];
-
-      Object.keys(values).forEach(function (name) {
-        restoreAttribute(el, name, values[name]);
-      });
-    });
-
-    elements.text41.innerHTML = originalText41;
-
-    elements.text41.style.display = "";
-    elements.text43.style.display = "";
-    elements.text38.style.display = "";
-
-    Object.values(wrappers).forEach(function (wrapper) {
-      if (wrapper) wrapper.removeAttribute("transform");
-    });
-
-    ["path73", "path18", "path50"].forEach(function (id) {
-      const el = document.getElementById(id);
-      if (el) el.style.display = "";
-    });
+    element.setAttribute("x", values.x);
+    element.setAttribute("y", values.y);
+    element.setAttribute("width", values.width);
+    element.setAttribute("height", values.height);
   }
 
   function layout() {
-    if (mobileQuery.matches) {
-      layoutMobile();
-    } else {
-      layoutDesktop();
+    const isMobile = window.matchMedia("(max-width: 600px)").matches;
+
+    if (!isMobile) {
+      svg.setAttribute("width", original.width);
+      svg.setAttribute("height", original.height);
+      svg.setAttribute("viewBox", original.viewBox);
+
+      svg.style.width = "";
+      svg.style.height = "";
+      svg.style.display = "";
+
+      Object.values(wrappers).forEach(w => {
+        if (w) w.removeAttribute("transform");
+      });
+
+      restoreRectangle(banner, originalBanner);
+
+      svg.removeAttribute("preserveAspectRatio");
+      return;
     }
+
+    svg.setAttribute("width", "376");
+    svg.setAttribute("height", "2160");
+    svg.setAttribute("viewBox", "0 0 376 2160");
+    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+
+    svg.style.width = "100vw";
+    svg.style.height = "auto";
+    svg.style.display = "block";
+
+    // Logo et textes du bandeau
+    move(wrappers.logo, -18.37, -2.58, 1);
+    move(
+      wrappers.title,
+      120 - 208.723 * 0.55,
+      60 - 22.300 * 0.55,
+      0.55
+    );
+    move(
+      wrappers.subtitle,
+      120 - 1010.446 * 0.65,
+      105 - 25.516 * 0.65,
+      0.65
+    );
+
+    // Rectangle du bandeau : dimensions mobiles
+    if (banner) {
+      banner.setAttribute("x", "14.124");
+      banner.setAttribute("y", "-173.095");
+      banner.setAttribute("width", "347.75");
+      banner.setAttribute("height", "125");
+    }
+
+    // Déplacement du rectangle du bandeau par son groupe enveloppe
+    move(
+      wrappers.bannerRect,
+      3 - 3.078,
+      1 - -0.765,
+      1
+    );
+
+    // Empilement des articles : logique conservée à l'identique
+    const articleStart = 190;
+    const articleStep = 468;
+
+    articles.forEach((a, i) => {
+      move(
+        wrappers[a.id],
+        14 - a.x,
+        articleStart + i * articleStep - a.y,
+        1
+      );
+    });
+
+    // Lien Home
+    move(
+      wrappers.home,
+      330 - 1330.750,
+      2060 - 61.099,
+      1
+    );
   }
 
   layout();
-
-  if (mobileQuery.addEventListener) {
-    mobileQuery.addEventListener("change", layout);
-  } else {
-    mobileQuery.addListener(layout);
-  }
-
   window.addEventListener("resize", layout);
 })();
 ]]></script>
