@@ -1622,6 +1622,7 @@
     const gapTitleBody = 18;
     const gapBodyReference = 18;
 
+    // Mesure du titre après retour à la ligne.
     const titleHeight =
       mobileTitleContainer.getBoundingClientRect().height;
 
@@ -1630,10 +1631,12 @@
       String(Math.ceil(titleHeight) + 2)
     );
 
+    // Positionnement du corps.
     const bodyY = titleY + titleHeight + gapTitleBody;
 
     mobileTextObject.setAttribute("y", String(bodyY));
 
+    // Mesure du corps.
     const bodyHeight =
       mobileTextContainer.getBoundingClientRect().height;
 
@@ -1642,6 +1645,7 @@
       String(Math.ceil(bodyHeight) + 2)
     );
 
+    // Positionnement de la référence.
     const referenceY =
       bodyY + bodyHeight + gapBodyReference;
 
@@ -1650,6 +1654,7 @@
       String(referenceY)
     );
 
+    // Mesure de la référence.
     const referenceHeight =
       mobileReferenceContainer.getBoundingClientRect().height;
 
@@ -1658,6 +1663,7 @@
       String(Math.ceil(referenceHeight) + 2)
     );
 
+    // Hauteur du panneau selon le contenu réel.
     const panelTop = 100.82375;
     const bottomPadding = 24;
 
@@ -1669,6 +1675,7 @@
       String(Math.ceil(totalHeight))
     );
 
+    // Hauteur du document SVG.
     const articleBottom =
       190 + 100.82375 + Math.ceil(totalHeight) + 30;
 
@@ -1744,30 +1751,24 @@
     svg.style.height = "2160px";
     svg.style.display = "block";
 
-    // Logo
+    // Logo et textes du bandeau.
     move(wrappers.logo, -18.37, -2.58, 1);
-
-    // TITRE DU BANDEAU : échelle doublée
-    const titleScale = 1.10;
 
     move(
       wrappers.title,
-      width / 2 - 208.723 * titleScale,
-      60 - 22.300 * titleScale,
-      titleScale
+      120 - 208.723 * 0.55,
+      60 - 22.300 * 0.55,
+      0.55
     );
-
-    // SOUS-TITRE DU BANDEAU : échelle doublée
-    const subtitleScale = 1.30;
 
     move(
       wrappers.subtitle,
-      width / 2 - 1010.446 * subtitleScale,
-      105 - 25.516 * subtitleScale,
-      subtitleScale
+      120 - 1010.446 * 0.65,
+      105 - 25.516 * 0.65,
+      0.65
     );
 
-    // RECTANGLE DU BANDEAU : largeur complète disponible
+    // Rectangle du bandeau.
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "-173.095");
@@ -1782,7 +1783,7 @@
       1
     );
 
-    // ARTICLE : réglages conservés
+    // Positionnement de l'article.
     const articleStart = 190;
 
     articles.forEach((a, i) => {
@@ -1794,7 +1795,7 @@
       );
     });
 
-    // Lien Home
+    // Lien Home.
     move(
       wrappers.home,
       Math.min(width - 46, 330) - 1330.750,
