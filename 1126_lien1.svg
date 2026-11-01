@@ -1404,6 +1404,10 @@
     element.setAttribute("y", values.y);
     element.setAttribute("width", values.width);
     element.setAttribute("height", values.height);
+   
+  element.style.display = "block";
+  element.style.visibility = "visible";
+  element.style.opacity = "1";
   }
 
   // ==========================================================
