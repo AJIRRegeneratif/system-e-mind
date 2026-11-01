@@ -1622,7 +1622,6 @@
     const gapTitleBody = 18;
     const gapBodyReference = 18;
 
-    // Mesure du titre après retour à la ligne.
     const titleHeight =
       mobileTitleContainer.getBoundingClientRect().height;
 
@@ -1631,12 +1630,10 @@
       String(Math.ceil(titleHeight) + 2)
     );
 
-    // Positionnement du corps.
     const bodyY = titleY + titleHeight + gapTitleBody;
 
     mobileTextObject.setAttribute("y", String(bodyY));
 
-    // Mesure du corps.
     const bodyHeight =
       mobileTextContainer.getBoundingClientRect().height;
 
@@ -1645,7 +1642,6 @@
       String(Math.ceil(bodyHeight) + 2)
     );
 
-    // Positionnement de la référence.
     const referenceY =
       bodyY + bodyHeight + gapBodyReference;
 
@@ -1654,7 +1650,6 @@
       String(referenceY)
     );
 
-    // Mesure de la référence.
     const referenceHeight =
       mobileReferenceContainer.getBoundingClientRect().height;
 
@@ -1663,7 +1658,6 @@
       String(Math.ceil(referenceHeight) + 2)
     );
 
-    // Hauteur du panneau selon le contenu réel.
     const panelTop = 100.82375;
     const bottomPadding = 24;
 
@@ -1675,7 +1669,6 @@
       String(Math.ceil(totalHeight))
     );
 
-    // Hauteur du document SVG.
     const articleBottom =
       190 + 100.82375 + Math.ceil(totalHeight) + 30;
 
@@ -1751,24 +1744,26 @@
     svg.style.height = "2160px";
     svg.style.display = "block";
 
-    // Logo et textes du bandeau.
+    // LOGO
     move(wrappers.logo, -18.37, -2.58, 1);
 
+    // TITRE DU BANDEAU : échelle 1 et centrage horizontal.
     move(
       wrappers.title,
-      120 - 208.723 * 0.55,
-      60 - 22.300 * 0.55,
-      0.55
+      width / 2 - 208.723,
+      60 - 22.300,
+      1
     );
 
+    // SOUS-TITRE DU BANDEAU : échelle 1 et centrage horizontal.
     move(
       wrappers.subtitle,
-      120 - 1010.446 * 0.65,
-      105 - 25.516 * 0.65,
-      0.65
+      width / 2 - 1010.446,
+      105 - 25.516,
+      1
     );
 
-    // Rectangle du bandeau.
+    // RECTANGLE DU BANDEAU
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "-173.095");
@@ -1783,7 +1778,7 @@
       1
     );
 
-    // Positionnement de l'article.
+    // ARTICLE
     const articleStart = 190;
 
     articles.forEach((a, i) => {
@@ -1795,7 +1790,7 @@
       );
     });
 
-    // Lien Home.
+    // LIEN HOME
     move(
       wrappers.home,
       Math.min(width - 46, 330) - 1330.750,
