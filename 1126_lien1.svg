@@ -1339,39 +1339,21 @@
 
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
-  const mobileQuery = window.matchMedia("(max-width: 600px)");
-
-  const M = {
-    width: 376,
-    margin: 14,
-    textX: 30,
-    textWidth: 316,
-    panelX: 14,
-    panelTop: 100.82375,
-    panelPaddingTop: 24,
-    panelPaddingBottom: 24,
-    titleSize: 18.6667,
-    titleLineHeight: 1.25,
-    bodySize: 13.3333,
-    bodyLineHeight: 1.25,
-    sourceSize: 10.6667,
-    sourceLineHeight: 1.2,
-    copyrightSize: 10.6667,
-    titleBodyGap: 12,
-    bodySourceGap: 16,
-    sourceCopyrightGap: 22,
-    bottomExtra: 30
-  };
+  const media = window.matchMedia("(max-width: 600px)");
 
   const $ = id => {
     const el = document.getElementById(id);
-    if (!el) throw new Error("Élément SVG introuvable : " + id);
+    if (!el) throw new Error("Élément introuvable : " + id);
     return el;
   };
 
-  const article = $("g1");
   const panel = $("rect4");
-  const copyright = $("text38");
+  const article = $("g1");
+
+  const titleEl = $("text39");
+  const bodyEl = $("text41");
+  const sourceEl = $("text43");
+  const copyrightEl = $("text38");
 
   const original = {
     viewBox: svg.getAttribute("viewBox"),
@@ -1389,56 +1371,66 @@
     texts: {}
   };
 
-  const textIds = ["text39", "text41", "text43", "text38"];
-
-  textIds.forEach(id => {
-    const el = $(id);
-
-    original.texts[id] = {
+  [titleEl, bodyEl, sourceEl, copyrightEl].forEach(el => {
+    original.texts[el.id] = {
       content: el.textContent.replace(/\s+/g, " ").trim(),
       nodes: Array.from(el.childNodes).map(n => n.cloneNode(true)),
       attrs: {}
     };
 
     [
-      "transform",
-      "x",
-      "y",
-      "style",
-      "font-size",
-      "font-family",
-      "font-weight",
-      "font-style",
-      "text-anchor",
-      "fill"
+      "transform", "x", "y", "style", "font-size",
+      "font-family", "font-weight", "font-style",
+      "text-anchor", "fill"
     ].forEach(attr => {
-      original.texts[id].attrs[attr] = el.getAttribute(attr);
+      original.texts[el.id].attrs[attr] = el.getAttribute(attr);
     });
   });
 
-  function getCanvasContext(font) {
+  const M = {
+    viewBoxWidth: 376,
+    sideMargin: 14,
+    textLeft: 30,
+    textRight: 30,
+    panelTop: 100.82375,
+    topPadding: 24,
+    bottomPadding: 24,
+    titleSize: 18.6667,
+    bodySize: 13.3333,
+    sourceSize: 10.6667,
+    copyrightSize: 10.6667,
+    titleLineHeight: 1.25,
+    bodyLineHeight: 1.35,
+    sourceLineHeight: 1.2,
+    copyrightLineHeight: 1.25,
+    titleGap: 12,
+    sourceGap: 16,
+    copyrightGap: 22
+  };
+
+  function canvasContext(font) {
     const canvas = document.createElement("canvas");
     const ctx = canvas.getContext("2d");
     ctx.font = font;
     return ctx;
   }
 
-  function wrapLines(text, font, maxWidth) {
-    const ctx = getCanvasContext(font);
+  function wrapText(text, font, width) {
+    const ctx = canvasContext(font);
     const words = text.split(/\s+/).filter(Boolean);
     const lines = [];
     let line = "";
 
-    words.forEach(word => {
+    for (const word of words) {
       const candidate = line ? line + " " + word : word;
 
-      if (line && ctx.measureText(candidate).width > maxWidth) {
+      if (line && ctx.measureText(candidate).width > width) {
         lines.push(line);
         line = word;
       } else {
         line = candidate;
       }
-    });
+    }
 
     if (line) lines.push(line);
     return lines;
@@ -1446,104 +1438,96 @@
 
   function rebuildText(
     id,
-    text,
     x,
     baseline,
-    maxWidth,
-    fontSize,
+    width,
+    size,
     lineHeight,
     family,
     weight,
     style
   ) {
     const el = $(id);
+    const text = original.texts[id].content;
 
     const font =
       (style ? style + " " : "") +
       (weight ? weight + " " : "") +
-      fontSize + "px " + family;
+      size + "px " + family;
 
-    const lines = wrapLines(text, font, maxWidth);
+    const lines = wrapText(text, font, width);
 
     el.replaceChildren();
     el.removeAttribute("style");
 
-    el.setAttribute(
-      "transform",
-      "translate(" + x + " " + baseline + ")"
-    );
+    el.setAttribute("transform", "translate(" + x + " " + baseline + ")");
     el.setAttribute("x", "0");
     el.setAttribute("y", "0");
     el.setAttribute("font-family", family);
-    el.setAttribute("font-size", String(fontSize));
+    el.setAttribute("font-size", String(size));
     el.setAttribute("font-weight", weight || "normal");
     el.setAttribute("font-style", style || "normal");
     el.setAttribute("text-anchor", "start");
     el.setAttribute("fill", "#ffffff");
 
     lines.forEach((line, index) => {
-      const tspan = document.createElementNS(NS, "tspan");
-
-      tspan.setAttribute("x", "0");
-      tspan.setAttribute(
-        "y",
-        String(index * fontSize * lineHeight)
-      );
-
-      tspan.textContent = line;
-      el.appendChild(tspan);
+      const span = document.createElementNS(NS, "tspan");
+      span.setAttribute("x", "0");
+      span.setAttribute("y", String(index * size * lineHeight));
+      span.textContent = line;
+      el.appendChild(span);
     });
 
     return {
-      height: Math.max(
-        fontSize,
-        lines.length * fontSize * lineHeight
-      ),
-      lines: lines.length
+      height: lines.length * size * lineHeight,
+      lineCount: lines.length
     };
   }
 
-  /*
-   * IMPORTANT :
-   * Le bandeau d'origine n'est pas modifié.
-   * Aucun wrapper, aucune transformation et aucun redimensionnement
-   * ne sont appliqués à rect8, g2, g3, g41 ou a1.
-   */
-
-  function setMobileRootDimensions(height) {
-    svg.setAttribute(
-      "viewBox",
-      "0 0 " + M.width + " " + height
+  function getAvailableScreenWidth() {
+    return Math.max(
+      320,
+      window.visualViewport
+        ? window.visualViewport.width
+        : window.innerWidth
     );
-
-    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
-
-    // La largeur suit la largeur du viewport CSS.
-    // Le rapport d'aspect du SVG est conservé par le viewBox.
-    svg.setAttribute("width", "100%");
-    svg.removeAttribute("height");
-
-    svg.style.setProperty("display", "block", "important");
-    svg.style.setProperty("width", "100vw", "important");
-    svg.style.setProperty("min-width", "100vw", "important");
-    svg.style.setProperty("max-width", "none", "important");
-    svg.style.setProperty("height", "auto", "important");
-    svg.style.setProperty("margin", "0", "important");
-    svg.style.setProperty("padding", "0", "important");
-    svg.style.setProperty("overflow", "visible", "important");
-    svg.style.setProperty("box-sizing", "border-box", "important");
   }
 
   function mobileLayout() {
-    // Le bandeau est laissé strictement tel qu'il est dans le SVG original.
+    const screenWidth = getAvailableScreenWidth();
+
+    // Le viewBox mobile est défini dans un repère de 376 unités.
+    // Le SVG occupe la largeur disponible de l'écran.
+    const scale = screenWidth / M.viewBoxWidth;
+
+    svg.setAttribute(
+      "viewBox",
+      "0 0 " + M.viewBoxWidth + " 1200"
+    );
+
+    svg.setAttribute("width", "100%");
+    svg.removeAttribute("height");
+    svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
+
+    svg.style.setProperty("display", "block", "important");
+    svg.style.setProperty("width", "100vw", "important");
+    svg.style.setProperty("max-width", "100vw", "important");
+    svg.style.setProperty("min-width", "100vw", "important");
+    svg.style.setProperty("height", "auto", "important");
+    svg.style.setProperty("margin", "0", "important");
+    svg.style.setProperty("padding", "0", "important");
+    svg.style.setProperty("box-sizing", "border-box", "important");
+
+    // Largeur disponible du panneau et du texte.
+    const panelWidth = M.viewBoxWidth - 2 * M.sideMargin;
+    const textWidth = M.viewBoxWidth - M.textLeft - M.textRight;
 
     // Titre.
     const title = rebuildText(
       "text39",
-      original.texts.text39.content,
-      M.textX,
-      M.panelTop + M.panelPaddingTop,
-      M.textWidth,
+      M.textLeft,
+      M.panelTop + M.topPadding,
+      textWidth,
       M.titleSize,
       M.titleLineHeight,
       "Leelawadee UI, Arial, sans-serif",
@@ -1551,19 +1535,18 @@
       "normal"
     );
 
-    // Corps de l'article.
+    // Corps.
     const bodyBaseline =
       M.panelTop +
-      M.panelPaddingTop +
+      M.topPadding +
       title.height +
-      M.titleBodyGap;
+      M.titleGap;
 
     const body = rebuildText(
       "text41",
-      original.texts.text41.content,
-      M.textX,
+      M.textLeft,
       bodyBaseline,
-      M.textWidth,
+      textWidth,
       M.bodySize,
       M.bodyLineHeight,
       "Arial, sans-serif",
@@ -1575,14 +1558,13 @@
     const sourceBaseline =
       bodyBaseline +
       body.height +
-      M.bodySourceGap;
+      M.sourceGap;
 
     const source = rebuildText(
       "text43",
-      original.texts.text43.content,
-      M.textX,
+      M.textLeft,
       sourceBaseline,
-      M.textWidth,
+      textWidth,
       M.sourceSize,
       M.sourceLineHeight,
       "Calibri, Arial, sans-serif",
@@ -1590,92 +1572,83 @@
       "italic"
     );
 
-    // Copyright placé sous la référence.
+    // Copyright sous la référence.
     const copyrightBaseline =
       sourceBaseline +
       source.height +
-      M.sourceCopyrightGap;
+      M.copyrightGap;
 
-    const copyrightLayout = rebuildText(
+    const copyright = rebuildText(
       "text38",
-      original.texts.text38.content,
-      M.textX,
+      M.textLeft,
       copyrightBaseline,
-      M.textWidth,
+      textWidth,
       M.copyrightSize,
-      1.25,
+      M.copyrightLineHeight,
       "Leelawadee UI, Arial, sans-serif",
       "normal",
       "normal"
     );
 
-    // Calcul de la hauteur totale.
+    // Hauteur du panneau calculée à partir de tout son contenu.
     const contentBottom =
-      copyrightBaseline +
-      copyrightLayout.height;
+      copyrightBaseline + copyright.height;
 
-    const panelHeight = Math.ceil(
-      contentBottom +
-      M.panelPaddingBottom -
-      M.panelTop
-    );
+    const panelHeight =
+      contentBottom + M.bottomPadding - M.panelTop;
 
-    // Rectangle de fond de l'article.
-    panel.setAttribute("x", String(M.panelX));
-
-    // Le groupe g1 conserve son translate(0,-10).
+    panel.setAttribute("x", String(M.sideMargin));
     panel.setAttribute("y", String(M.panelTop + 10));
+    panel.setAttribute("width", String(panelWidth));
+    panel.setAttribute("height", String(panelHeight));
 
-    panel.setAttribute(
-      "width",
-      String(M.width - 2 * M.margin)
-    );
-
-    panel.setAttribute(
-      "height",
-      String(panelHeight)
-    );
-
-    // Masquage des décorations internes à l'article uniquement.
+    // Les décorations de l'article sont masquées, pas le bandeau.
     article.querySelectorAll("path").forEach(path => {
-      if (!path.hasAttribute("data-original-display")) {
+      if (!path.hasAttribute("data-display-original")) {
         path.setAttribute(
-          "data-original-display",
+          "data-display-original",
           path.getAttribute("display") === null
             ? "__none__"
             : path.getAttribute("display")
         );
       }
-
       path.setAttribute("display", "none");
     });
 
-    const totalHeight = Math.max(
-      900,
-      Math.ceil(contentBottom + M.bottomExtra)
+    const totalHeight = Math.ceil(contentBottom + 35);
+
+    svg.setAttribute(
+      "viewBox",
+      "0 0 " + M.viewBoxWidth + " " + totalHeight
     );
 
-    setMobileRootDimensions(totalHeight);
+    // Conserver la proportion de 376 unités pour la largeur,
+    // et adapter la hauteur à la longueur réelle du texte.
+    svg.style.setProperty("height", "auto", "important");
+
+    // Évite que le calcul de largeur reste bloqué sur les dimensions
+    // historiques de 1590 × 725.
+    svg.setAttribute("width", "100%");
+    svg.removeAttribute("height");
+
+    return {
+      scale,
+      screenWidth,
+      panelWidth,
+      panelHeight,
+      totalHeight
+    };
   }
 
   function desktopLayout() {
-    if (original.viewBox === null) {
-      svg.removeAttribute("viewBox");
-    } else {
-      svg.setAttribute("viewBox", original.viewBox);
-    }
+    if (original.viewBox === null) svg.removeAttribute("viewBox");
+    else svg.setAttribute("viewBox", original.viewBox);
 
-    if (original.width === null) {
-      svg.removeAttribute("width");
-    } else {
-      svg.setAttribute("width", original.width);
-    }
+    if (original.width === null) svg.removeAttribute("width");
+    else svg.setAttribute("width", original.width);
 
-    if (original.height === null) {
-      svg.removeAttribute("height");
-    } else {
-      svg.setAttribute("height", original.height);
-    }
+    if (original.height === null) svg.removeAttribute("height");
+    else svg.setAttribute("height", original.height);
 
     if (original.preserveAspectRatio === null) {
       svg.removeAttribute("preserveAspectRatio");
@@ -1686,19 +1659,13 @@
       );
     }
 
-    if (original.style === null) {
-      svg.removeAttribute("style");
-    } else {
-      svg.setAttribute("style", original.style);
-    }
+    if (original.style === null) svg.removeAttribute("style");
+    else svg.setAttribute("style", original.style);
 
     if (original.articleTransform === null) {
       article.removeAttribute("transform");
     } else {
-      article.setAttribute(
-        "transform",
-        original.articleTransform
-      );
+      article.setAttribute("transform", original.articleTransform);
     }
 
     panel.setAttribute("x", original.panel.x);
@@ -1706,16 +1673,13 @@
     panel.setAttribute("width", original.panel.width);
     panel.setAttribute("height", original.panel.height);
 
-    textIds.forEach(id => {
+    Object.keys(original.texts).forEach(id => {
       const el = $(id);
       const data = original.texts[id];
 
-      Object.keys(data.attrs).forEach(attr => {
-        if (data.attrs[attr] === null) {
-          el.removeAttribute(attr);
-        } else {
-          el.setAttribute(attr, data.attrs[attr]);
-        }
+      Object.entries(data.attrs).forEach(([attr, value]) => {
+        if (value === null) el.removeAttribute(attr);
+        else el.setAttribute(attr, value);
       });
 
       el.replaceChildren(
@@ -1723,36 +1687,30 @@
       );
     });
 
-    article.querySelectorAll("path[data-original-display]").forEach(path => {
-      const value = path.getAttribute("data-original-display");
+    article.querySelectorAll("path[data-display-original]").forEach(path => {
+      const value = path.getAttribute("data-display-original");
 
-      if (value === "__none__") {
-        path.removeAttribute("display");
-      } else {
-        path.setAttribute("display", value);
-      }
+      if (value === "__none__") path.removeAttribute("display");
+      else path.setAttribute("display", value);
 
-      path.removeAttribute("data-original-display");
+      path.removeAttribute("data-display-original");
     });
   }
 
-  // Le mode mobile est verrouillé dès le chargement.
-  // Pas de retour automatique en mode ordinateur pendant le défilement.
-  if (mobileQuery.matches) {
+  // Choix du mode au chargement : pas de retour bureau au défilement.
+  if (media.matches) {
     mobileLayout();
   } else {
     desktopLayout();
 
-    const onBreakpointChange = () => {
-      if (mobileQuery.matches) {
-        mobileLayout();
-      }
+    const onChange = () => {
+      if (media.matches) mobileLayout();
     };
 
-    if (typeof mobileQuery.addEventListener === "function") {
-      mobileQuery.addEventListener("change", onBreakpointChange);
+    if (media.addEventListener) {
+      media.addEventListener("change", onChange);
     } else {
-      mobileQuery.addListener(onBreakpointChange);
+      media.addListener(onChange);
     }
   }
 })();
