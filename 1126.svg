@@ -1841,6 +1841,11 @@
       });
 
       restoreRectangle(banner, originalBanner);
+    
+      if (wrappers.bannerRect) {
+        wrappers.bannerRect.removeAttribute("transform");
+      }
+
       restoreRectangle(copyrightRect, originalCopyrightRect);
 
       svg.removeAttribute("preserveAspectRatio");
