@@ -1810,36 +1810,59 @@
     const titleTargetX = 120;
     const titleTargetY = 60;
 
-    move(
-      wrappers.title,
-      titleTargetX - 208.723 * titleScale,
-      titleTargetY - 22.300 * titleScale,
-      titleScale
-    );
-
-    // SOUS-TITRE : ÉCHELLE DOUBLÉE ET ESPACEMENT DE 100
+    // SOUS-TITRE : ÉCHELLE DOUBLÉE ET ESPACEMENT DE 80
     const subtitleScale = 1.30;
-    const subtitleGap = 100;
+    const subtitleGap = 80;
 
     if (wrappers.title && wrappers.subtitle) {
       try {
         const titleBounds = wrappers.title.getBBox();
         const subtitleBounds = wrappers.subtitle.getBBox();
 
+        // Hauteur réelle du titre après mise à l'échelle
+        const titleHeight = titleBounds.height * titleScale;
+
+        // Hauteur réelle du sous-titre après mise à l'échelle
+        const subtitleHeight = subtitleBounds.height * subtitleScale;
+
+        // Centre vertical du titre
+        const titleCenterY =
+          titleTargetY + titleHeight / 2;
+
+        // Position verticale du sous-titre pour aligner les centres
+        const subtitleTargetY =
+          titleCenterY - subtitleHeight / 2;
+
+        // POSITION DU TITRE
+        move(
+          wrappers.title,
+          titleTargetX - titleBounds.x * titleScale,
+          titleTargetY - titleBounds.y * titleScale,
+          titleScale
+        );
+
+        // POSITION HORIZONTALE DU SOUS-TITRE
         const subtitleTargetX =
           titleTargetX +
           titleBounds.width * titleScale +
           subtitleGap;
 
-        const subtitleTargetY = titleTargetY;
-
+        // POSITION DU SOUS-TITRE
         move(
           wrappers.subtitle,
           subtitleTargetX - subtitleBounds.x * subtitleScale,
           subtitleTargetY - subtitleBounds.y * subtitleScale,
           subtitleScale
         );
+
       } catch (error) {
+        move(
+          wrappers.title,
+          titleTargetX - 208.723 * titleScale,
+          titleTargetY - 22.300 * titleScale,
+          titleScale
+        );
+
         move(
           wrappers.subtitle,
           120 - 1010.446 * subtitleScale,
