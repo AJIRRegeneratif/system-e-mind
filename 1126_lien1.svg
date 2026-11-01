@@ -1606,7 +1606,7 @@
     mobileCopyrightObject = copyright.object;
     mobileCopyrightContainer = copyright.container;
 
-    // Masquage des textes SVG originaux en mode mobile.
+    // MASQUAGE DES TEXTES SVG ORIGINAUX EN MODE MOBILE
     articleTitle.style.display = "none";
     articleText.style.display = "none";
     articleReference.style.display = "none";
@@ -1816,22 +1816,52 @@
     svg.style.height = "2160px";
     svg.style.display = "block";
 
-    // LOGO ET TEXTES DU BANDEAU
+    // LOGO
     move(wrappers.logo, -18.37, -2.58, 1);
+
+    // TITRE DU BANDEAU
+    const titleScale = 0.55;
+    const titleTargetX = 120;
+    const titleTargetY = 60;
 
     move(
       wrappers.title,
-      120 - 208.723 * 0.55,
-      60 - 22.300 * 0.55,
-      0.55
+      titleTargetX - 208.723 * titleScale,
+      titleTargetY - 22.300 * titleScale,
+      titleScale
     );
 
-    move(
-      wrappers.subtitle,
-      120 - 1010.446 * 0.65,
-      105 - 25.516 * 0.65,
-      0.65
-    );
+    // SOUS-TITRE À DROITE DU TITRE
+    const subtitleScale = 0.65;
+    const subtitleGap = 10;
+
+    if (wrappers.title && wrappers.subtitle) {
+      try {
+        const titleBounds = wrappers.title.getBBox();
+        const subtitleBounds = wrappers.subtitle.getBBox();
+
+        const subtitleTargetX =
+          titleTargetX +
+          titleBounds.width * titleScale +
+          subtitleGap;
+
+        const subtitleTargetY = titleTargetY;
+
+        move(
+          wrappers.subtitle,
+          subtitleTargetX - subtitleBounds.x * subtitleScale,
+          subtitleTargetY - subtitleBounds.y * subtitleScale,
+          subtitleScale
+        );
+      } catch (error) {
+        move(
+          wrappers.subtitle,
+          120 - 1010.446 * subtitleScale,
+          105 - 25.516 * subtitleScale,
+          subtitleScale
+        );
+      }
+    }
 
     // RECTANGLE DU BANDEAU
     if (banner) {
