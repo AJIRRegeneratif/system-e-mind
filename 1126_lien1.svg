@@ -1841,6 +1841,21 @@
     svg.style.height = "2160px";
     svg.style.display = "block";
 
+    // RECTANGLE DU BANDEAU : POSITIONNÉ AVANT LES TEXTES
+    if (banner) {
+      banner.setAttribute("x", "14.124");
+      banner.setAttribute("y", "-173.095");
+      banner.setAttribute("width", String(width - 28));
+      banner.setAttribute("height", "125");
+    }
+
+    move(
+      wrappers.bannerRect,
+      3 - 3.078,
+      1 - -0.765,
+      1
+    );
+
     // TITRE DU BANDEAU
     const titleScale = 1.10;
     const titleTargetX = 120;
@@ -1919,7 +1934,7 @@
           subtitleScale
         );
 
-        // LIEN HOME : À DROITE DU SOUS-TITRE, CENTRÉ VERTICALEMENT
+        // LIEN HOME : À DROITE DU SOUS-TITRE
         if (wrappers.home) {
           const homeBounds = wrappers.home.getBBox();
           const homeGap = 24;
@@ -1941,6 +1956,7 @@
             1
           );
         }
+
       } catch (error) {
         move(
           wrappers.subtitle,
@@ -1950,21 +1966,6 @@
         );
       }
     }
-
-    // RECTANGLE DU BANDEAU
-    if (banner) {
-      banner.setAttribute("x", "14.124");
-      banner.setAttribute("y", "-173.095");
-      banner.setAttribute("width", String(width - 28));
-      banner.setAttribute("height", "125");
-    }
-
-    move(
-      wrappers.bannerRect,
-      3 - 3.078,
-      1 - -0.765,
-      1
-    );
 
     // POSITIONNEMENT DE L'ARTICLE
     const articleStart = 190;
@@ -2017,18 +2018,32 @@
   }
 
   // ==========================================================
-  // VERROUILLAGE DU MODE MOBILE
+  // VERROUILLAGE DU MODE MOBILE ET STABILISATION DU CHARGEMENT
   // ==========================================================
 
   const mobileQuery = window.matchMedia("(max-width: 600px)");
   const mobileAtStart = mobileQuery.matches;
 
+  function refreshMobileLayout() {
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        if (mobileQuery.matches) {
+          mobileLayout();
+        }
+      });
+    });
+  }
+
   if (mobileAtStart) {
     mobileLayout();
 
-    window.addEventListener("resize", function () {
-      mobileLayout();
-    });
+    window.addEventListener("load", refreshMobileLayout);
+
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(refreshMobileLayout);
+    }
+
+    window.addEventListener("resize", refreshMobileLayout);
 
   } else {
     desktopLayout();
@@ -2049,7 +2064,7 @@
 
     window.addEventListener("resize", function () {
       if (mobileQuery.matches) {
-        mobileLayout();
+        refreshMobileLayout();
       }
     });
   }
