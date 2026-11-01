@@ -1802,54 +1802,10 @@
     svg.style.height = "2160px";
     svg.style.display = "block";
 
-    // LOGO
-    move(wrappers.logo, -18.37, -2.58, 1);
-
-    // TITRE DU BANDEAU : ÉCHELLE DOUBLÉE
-    const titleScale = 1.10;
-    const titleTargetX = 120;
-    const titleTargetY = 60;
-
-    move(
-      wrappers.title,
-      titleTargetX - 208.723 * titleScale,
-      titleTargetY - 22.300 * titleScale,
-      titleScale
-    );
-
-    // SOUS-TITRE : ÉCHELLE DOUBLÉE ET ESPACEMENT DE 100
-    const subtitleScale = 1.30;
-    const subtitleGap = 100;
-
-    if (wrappers.title && wrappers.subtitle) {
-      try {
-        const titleBounds = wrappers.title.getBBox();
-        const subtitleBounds = wrappers.subtitle.getBBox();
-
-        const subtitleTargetX =
-          titleTargetX +
-          titleBounds.width * titleScale +
-          subtitleGap;
-
-        const subtitleTargetY = titleTargetY;
-
-        move(
-          wrappers.subtitle,
-          subtitleTargetX - subtitleBounds.x * subtitleScale,
-          subtitleTargetY - subtitleBounds.y * subtitleScale,
-          subtitleScale
-        );
-      } catch (error) {
-        move(
-          wrappers.subtitle,
-          120 - 1010.446 * subtitleScale,
-          105 - 25.516 * subtitleScale,
-          subtitleScale
-        );
-      }
-    }
-
+    // ========================================================
     // RECTANGLE DU BANDEAU
+    // ========================================================
+
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "-173.095");
@@ -1864,7 +1820,117 @@
       1
     );
 
+    // Dimensions visibles du bandeau après transformation
+    const bannerX = 14.124 + (3 - 3.078);
+    const bannerY = -173.095 + (1 - -0.765);
+    const bannerHeight = 125;
+
+    const bannerCenterY = bannerY + bannerHeight / 2;
+
+    // ========================================================
+    // LOGO : À 10 PX DU BORD GAUCHE, CENTRÉ VERTICALEMENT
+    // ========================================================
+
+    if (wrappers.logo) {
+      try {
+        const logoBounds = wrappers.logo.getBBox();
+
+        const logoTargetX = bannerX + 10;
+
+        const logoTargetY =
+          bannerCenterY -
+          (logoBounds.y + logoBounds.height / 2);
+
+        move(
+          wrappers.logo,
+          logoTargetX - logoBounds.x,
+          logoTargetY,
+          1
+        );
+      } catch (error) {
+        move(wrappers.logo, 10, bannerCenterY, 1);
+      }
+    }
+
+    // ========================================================
+    // TITRE : ÉCHELLE DOUBLÉE ET CENTRAGE VERTICAL
+    // ========================================================
+
+    const titleScale = 1.10;
+    const titleTargetX = 120;
+
+    let titleBounds = null;
+
+    if (wrappers.title) {
+      try {
+        titleBounds = wrappers.title.getBBox();
+
+        const titleTargetY =
+          bannerCenterY -
+          (titleBounds.y + titleBounds.height / 2) * titleScale;
+
+        move(
+          wrappers.title,
+          titleTargetX - titleBounds.x * titleScale,
+          titleTargetY,
+          titleScale
+        );
+      } catch (error) {
+        move(
+          wrappers.title,
+          titleTargetX - 208.723 * titleScale,
+          bannerCenterY - 22.300 * titleScale,
+          titleScale
+        );
+      }
+    }
+
+    // ========================================================
+    // SOUS-TITRE : ÉCHELLE DOUBLÉE, ESPACEMENT DE 80 PX
+    // ET CENTRAGE VERTICAL
+    // ========================================================
+
+    const subtitleScale = 1.30;
+    const subtitleGap = 80;
+
+    if (wrappers.title && wrappers.subtitle) {
+      try {
+        if (!titleBounds) {
+          titleBounds = wrappers.title.getBBox();
+        }
+
+        const subtitleBounds = wrappers.subtitle.getBBox();
+
+        const subtitleTargetX =
+          titleTargetX +
+          titleBounds.width * titleScale +
+          subtitleGap;
+
+        const subtitleTargetY =
+          bannerCenterY -
+          (subtitleBounds.y + subtitleBounds.height / 2) *
+          subtitleScale;
+
+        move(
+          wrappers.subtitle,
+          subtitleTargetX - subtitleBounds.x * subtitleScale,
+          subtitleTargetY,
+          subtitleScale
+        );
+      } catch (error) {
+        move(
+          wrappers.subtitle,
+          120 - 1010.446 * subtitleScale,
+          bannerCenterY - 25.516 * subtitleScale,
+          subtitleScale
+        );
+      }
+    }
+
+    // ========================================================
     // POSITIONNEMENT DE L'ARTICLE
+    // ========================================================
+
     const articleStart = 190;
 
     articles.forEach((a, i) => {
@@ -1876,7 +1942,10 @@
       );
     });
 
+    // ========================================================
     // LIEN HOME
+    // ========================================================
+
     move(
       wrappers.home,
       Math.min(width - 46, 330) - 1330.750,
