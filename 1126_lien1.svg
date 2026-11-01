@@ -1403,13 +1403,22 @@
   };
 
   const originalTextAttrs = {};
+
   ["text39", "text41", "text43", "text38"].forEach(id => {
     const el = $(id);
     originalTextAttrs[id] = {};
+
     [
-      "transform", "x", "y", "style", "font-size",
-      "font-family", "font-weight", "font-style",
-      "text-anchor", "fill"
+      "transform",
+      "x",
+      "y",
+      "style",
+      "font-size",
+      "font-family",
+      "font-weight",
+      "font-style",
+      "text-anchor",
+      "fill"
     ].forEach(attr => {
       originalTextAttrs[id][attr] = el.getAttribute(attr);
     });
@@ -1420,7 +1429,11 @@
     group.id = id;
     el.parentNode.insertBefore(group, el);
     group.appendChild(el);
-    return { element: el, wrapper: group };
+
+    return {
+      element: el,
+      wrapper: group
+    };
   }
 
   function getRootBox(item) {
@@ -1463,6 +1476,7 @@
 
   function scaleTo(item, x, y, width, height) {
     const box = getRootBox(item);
+
     if (!box.width || !box.height) return;
 
     const sx = width / box.width;
@@ -1509,6 +1523,7 @@
     }
 
     if (line) lines.push(line);
+
     return lines;
   }
 
@@ -1536,7 +1551,11 @@
     el.replaceChildren();
     el.removeAttribute("style");
 
-    el.setAttribute("transform", "translate(" + x + " " + baseline + ")");
+    el.setAttribute(
+      "transform",
+      "translate(" + x + " " + baseline + ")"
+    );
+
     el.setAttribute("x", "0");
     el.setAttribute("y", "0");
     el.setAttribute("font-family", family);
@@ -1548,31 +1567,53 @@
 
     lines.forEach((line, index) => {
       const tspan = document.createElementNS(NS, "tspan");
+
       tspan.setAttribute("x", "0");
-      tspan.setAttribute("y", String(index * fontSize * lineHeight));
+      tspan.setAttribute(
+        "y",
+        String(index * fontSize * lineHeight)
+      );
+
       tspan.textContent = line;
       el.appendChild(tspan);
     });
 
     return {
-      height: Math.max(fontSize, lines.length * fontSize * lineHeight),
+      height: Math.max(
+        fontSize,
+        lines.length * fontSize * lineHeight
+      ),
       lines: lines.length
     };
   }
 
+  // Force la racine SVG à occuper la largeur réelle de l'écran.
   function setRootDimensions(height) {
-    // Le viewBox ET les dimensions intrinsèques sont modifiés.
-    // Cela évite de conserver le format 1590 × 725 du SVG d'origine.
-    svg.setAttribute("viewBox", "0 0 " + M.width + " " + height);
-    svg.setAttribute("width", String(M.width));
-    svg.setAttribute("height", String(height));
+    const screenWidth = Math.max(
+      320,
+      window.innerWidth ||
+      document.documentElement.clientWidth ||
+      M.width
+    );
+
+    svg.setAttribute(
+      "viewBox",
+      "0 0 " + M.width + " " + height
+    );
+
+    svg.setAttribute("width", screenWidth + "px");
+    svg.setAttribute("height", height + "px");
     svg.setAttribute("preserveAspectRatio", "xMinYMin meet");
 
-    svg.style.display = "block";
-    svg.style.width = "100%";
-    svg.style.height = "auto";
-    svg.style.maxWidth = "100%";
-    svg.style.overflow = "visible";
+    svg.style.setProperty("display", "block", "important");
+    svg.style.setProperty("width", screenWidth + "px", "important");
+    svg.style.setProperty("min-width", screenWidth + "px", "important");
+    svg.style.setProperty("max-width", "none", "important");
+    svg.style.setProperty("height", "auto", "important");
+    svg.style.setProperty("margin", "0", "important");
+    svg.style.setProperty("padding", "0", "important");
+    svg.style.setProperty("overflow", "visible", "important");
+    svg.style.setProperty("box-sizing", "border-box", "important");
   }
 
   function mobileLayout() {
@@ -1586,7 +1627,13 @@
     );
 
     // Logo et éléments du bandeau.
-    scaleTo(logoGraphic, 17, 17, 52, 65);
+    scaleTo(
+      logoGraphic,
+      17,
+      17,
+      52,
+      65
+    );
 
     logoWords.wrapper.setAttribute(
       "transform",
@@ -1651,8 +1698,7 @@
       "italic"
     );
 
-    // Copyright : reconstruction avec les mêmes mots et la même taille,
-    // mais avec de nouvelles coordonnées sous la référence.
+    // Copyright positionné sous la référence.
     const copyrightBaseline =
       sourceBaseline +
       source.height +
@@ -1671,7 +1717,7 @@
       "normal"
     );
 
-    // Hauteur totale du contenu.
+    // Calcul de la hauteur du contenu.
     const contentBottom =
       copyrightBaseline +
       copyrightLayout.height;
@@ -1682,11 +1728,8 @@
       M.panelTop
     );
 
-    // Le panneau est maintenant presque exactement de la largeur
-    // du mobile, avec 16 px environ de marge de chaque côté.
+    // Rectangle de fond.
     panel.setAttribute("x", String(M.panelX));
-
-    // Le groupe article conserve translate(0,-10).
     panel.setAttribute("y", String(M.panelTop + 10));
 
     panel.setAttribute(
@@ -1694,9 +1737,12 @@
       String(M.width - 2 * M.margin)
     );
 
-    panel.setAttribute("height", String(panelHeight));
+    panel.setAttribute(
+      "height",
+      String(panelHeight)
+    );
 
-    // Masquer les éléments décoratifs de l'article.
+    // Masquer les décorations de l'article.
     article.querySelectorAll("path").forEach(path => {
       path.setAttribute("display", "none");
     });
@@ -1707,7 +1753,7 @@
       "translate(330 8) scale(.7)"
     );
 
-    // Dimensions réelles du SVG adaptées au contenu mobile.
+    // Dimensions de la racine SVG.
     const totalHeight = Math.max(
       900,
       Math.ceil(contentBottom + M.bottomExtra)
@@ -1717,14 +1763,23 @@
   }
 
   function desktopLayout() {
-    if (originalViewBox === null) svg.removeAttribute("viewBox");
-    else svg.setAttribute("viewBox", originalViewBox);
+    if (originalViewBox === null) {
+      svg.removeAttribute("viewBox");
+    } else {
+      svg.setAttribute("viewBox", originalViewBox);
+    }
 
-    if (originalWidth === null) svg.removeAttribute("width");
-    else svg.setAttribute("width", originalWidth);
+    if (originalWidth === null) {
+      svg.removeAttribute("width");
+    } else {
+      svg.setAttribute("width", originalWidth);
+    }
 
-    if (originalHeight === null) svg.removeAttribute("height");
-    else svg.setAttribute("height", originalHeight);
+    if (originalHeight === null) {
+      svg.removeAttribute("height");
+    } else {
+      svg.setAttribute("height", originalHeight);
+    }
 
     if (originalPreserve === null) {
       svg.removeAttribute("preserveAspectRatio");
@@ -1732,8 +1787,11 @@
       svg.setAttribute("preserveAspectRatio", originalPreserve);
     }
 
-    if (originalStyle === null) svg.removeAttribute("style");
-    else svg.setAttribute("style", originalStyle);
+    if (originalStyle === null) {
+      svg.removeAttribute("style");
+    } else {
+      svg.setAttribute("style", originalStyle);
+    }
 
     [
       banner,
@@ -1748,7 +1806,10 @@
     if (originalArticleTransform === null) {
       article.removeAttribute("transform");
     } else {
-      article.setAttribute("transform", originalArticleTransform);
+      article.setAttribute(
+        "transform",
+        originalArticleTransform
+      );
     }
 
     panel.setAttribute("x", originalPanel.x);
@@ -1761,8 +1822,11 @@
       const attrs = originalTextAttrs[id];
 
       Object.keys(attrs).forEach(attr => {
-        if (attrs[attr] === null) el.removeAttribute(attr);
-        else el.setAttribute(attr, attrs[attr]);
+        if (attrs[attr] === null) {
+          el.removeAttribute(attr);
+        } else {
+          el.setAttribute(attr, attrs[attr]);
+        }
       });
     });
 
@@ -1787,9 +1851,8 @@
     });
   }
 
-  // Verrouillage du mode mobile au chargement :
-  // aucun redimensionnement lié au défilement ne déclenche un retour
-  // automatique à la présentation ordinateur.
+  // Verrouillage du mode au chargement.
+  // Pas de bascule automatique lors du défilement sur mobile.
   if (mobileQuery.matches) {
     mobileLayout();
   } else {
@@ -1802,7 +1865,10 @@
     };
 
     if (typeof mobileQuery.addEventListener === "function") {
-      mobileQuery.addEventListener("change", onBreakpointChange);
+      mobileQuery.addEventListener(
+        "change",
+        onBreakpointChange
+      );
     } else {
       mobileQuery.addListener(onBreakpointChange);
     }
