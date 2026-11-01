@@ -1514,7 +1514,7 @@
     const title = createTextObject(
       "mobile-article-title",
       110,
-      18.667,
+      37,
       1.25,
       "'Leelawadee UI',Arial,sans-serif",
       "bold",
@@ -1531,7 +1531,7 @@
     const body = createTextObject(
       "mobile-article-text",
       160,
-      13.333,
+      27,
       1.25,
       "Arial,sans-serif",
       "normal",
@@ -1563,7 +1563,7 @@
     const reference = createTextObject(
       "mobile-article-reference",
       0,
-      10.667,
+      21,
       1.2,
       "Calibri,Arial,sans-serif",
       "300",
