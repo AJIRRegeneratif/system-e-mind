@@ -1407,6 +1407,44 @@
   }
 
   // ==========================================================
+  // CALCUL DE POSITION ENTRE LES COORDONNÉES SVG
+  // ==========================================================
+
+  function convertPoint(point, sourceElement, targetParent) {
+    const sourceMatrix = sourceElement.getScreenCTM();
+    const targetMatrix = targetParent.getScreenCTM();
+
+    if (!sourceMatrix || !targetMatrix) {
+      throw new Error("Impossible de calculer les coordonnées SVG.");
+    }
+
+    const screenPoint = point.matrixTransform(sourceMatrix);
+    return screenPoint.matrixTransform(targetMatrix.inverse());
+  }
+
+  function getBannerTopInTitleCoordinates() {
+    if (!wrappers.bannerRect || !wrappers.title) {
+      throw new Error("Bandeau ou titre introuvable.");
+    }
+
+    const bannerBounds = wrappers.bannerRect.getBBox();
+    const point = svg.createSVGPoint();
+
+    point.x = bannerBounds.x;
+    point.y = bannerBounds.y;
+
+    const titleParent = wrappers.title.parentNode;
+
+    const convertedPoint = convertPoint(
+      point,
+      wrappers.bannerRect,
+      titleParent
+    );
+
+    return convertedPoint.y;
+  }
+
+  // ==========================================================
   // TEXTES ET PANNEAU DE L'ARTICLE
   // ==========================================================
 
@@ -1803,12 +1841,41 @@
     svg.style.display = "block";
 
     // ========================================================
-    // TITRE DU BANDEAU
+    // RECTANGLE DU BANDEAU
+    // ========================================================
+
+    if (banner) {
+      banner.setAttribute("x", "14.124");
+      banner.setAttribute("y", "-173.095");
+      banner.setAttribute("width", String(width - 28));
+      banner.setAttribute("height", "125");
+    }
+
+    move(
+      wrappers.bannerRect,
+      3 - 3.078,
+      1 - -0.765,
+      1
+    );
+
+    // ========================================================
+    // TITRE ET SOUS-TITRE
+    // Positionnés à 15 px du haut réel du bandeau
     // ========================================================
 
     const titleScale = 1.10;
     const titleTargetX = 120;
-    const titleTargetY = 60;
+    const bannerMarginTop = 15;
+
+    let titleTargetY;
+
+    try {
+      const bannerTop = getBannerTopInTitleCoordinates();
+      titleTargetY = bannerTop + bannerMarginTop;
+    } catch (error) {
+      // Valeur de secours si le navigateur ne fournit pas les matrices.
+      titleTargetY = 60;
+    }
 
     move(
       wrappers.title,
@@ -1818,8 +1885,7 @@
     );
 
     // ========================================================
-    // LOGO : POSITIONNÉ À GAUCHE DU TITRE
-    // ET CENTRÉ VERTICALEMENT SUR CELUI-CI
+    // LOGO À GAUCHE DU TITRE
     // ========================================================
 
     if (wrappers.logo && wrappers.title) {
@@ -1856,7 +1922,7 @@
     }
 
     // ========================================================
-    // SOUS-TITRE : ÉCHELLE 1.30 ET ESPACEMENT DE 100
+    // SOUS-TITRE
     // ========================================================
 
     const subtitleScale = 1.30;
@@ -1872,41 +1938,22 @@
           titleBounds.width * titleScale +
           subtitleGap;
 
-        const subtitleTargetY = titleTargetY;
-
         move(
           wrappers.subtitle,
           subtitleTargetX - subtitleBounds.x * subtitleScale,
-          subtitleTargetY - subtitleBounds.y * subtitleScale,
+          titleTargetY - subtitleBounds.y * subtitleScale,
           subtitleScale
         );
+
       } catch (error) {
         move(
           wrappers.subtitle,
           120 - 1010.446 * subtitleScale,
-          105 - 25.516 * subtitleScale,
+          titleTargetY - 25.516 * subtitleScale,
           subtitleScale
         );
       }
     }
-
-    // ========================================================
-    // RECTANGLE DU BANDEAU
-    // ========================================================
-
-    if (banner) {
-      banner.setAttribute("x", "14.124");
-      banner.setAttribute("y", "-173.095");
-      banner.setAttribute("width", String(width - 28));
-      banner.setAttribute("height", "125");
-    }
-
-    move(
-      wrappers.bannerRect,
-      3 - 3.078,
-      1 - -0.765,
-      1
-    );
 
     // ========================================================
     // POSITIONNEMENT DE L'ARTICLE
