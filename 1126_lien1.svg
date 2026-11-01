@@ -1802,10 +1802,43 @@
     svg.style.height = "2160px";
     svg.style.display = "block";
 
-    // LOGO
-    move(wrappers.logo, -18.37, -2.58, 1);
+    // ========================================================
+    // LOGO : ALIGNÉ À GAUCHE ET CENTRÉ VERTICALEMENT
+    // DANS LE BANDEAU
+    // ========================================================
 
-    // TITRE DU BANDEAU : ÉCHELLE DOUBLÉE
+    if (wrappers.logo) {
+      try {
+        const logoBounds = wrappers.logo.getBBox();
+
+        const logoScale = 1;
+
+        const bannerLeft = 14.046;
+        const bannerTop = -171.33;
+        const bannerHeight = 125;
+
+        const logoTargetX = bannerLeft;
+
+        const logoTargetY =
+          bannerTop +
+          (bannerHeight - logoBounds.height * logoScale) / 2;
+
+        move(
+          wrappers.logo,
+          logoTargetX - logoBounds.x * logoScale,
+          logoTargetY - logoBounds.y * logoScale,
+          logoScale
+        );
+
+      } catch (error) {
+        move(wrappers.logo, -18.37, -2.58, 1);
+      }
+    }
+
+    // ========================================================
+    // TITRE DU BANDEAU
+    // ========================================================
+
     const titleScale = 1.10;
     const titleTargetX = 120;
     const titleTargetY = 60;
@@ -1829,7 +1862,7 @@
         const titleCenterY =
           titleTargetY + titleHeight / 2;
 
-        // Position verticale du sous-titre pour aligner les centres
+        // Alignement vertical des centres
         const subtitleTargetY =
           titleCenterY - subtitleHeight / 2;
 
