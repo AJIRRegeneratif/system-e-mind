@@ -1368,9 +1368,9 @@
     articleY: 190,
     textX: 9,
     textWidth: 338,
-    titleTop: 120,
-    titleBodyGap: 6,
-    bodyReferenceGap: 6,
+    titleTop: 135,
+    titleBodyGap: 4,
+    bodyReferenceGap: 4,
     bottomPadding: 24,
     panelTop: 100.82375
   };
@@ -1502,8 +1502,12 @@
     const div = document.createElementNS(XHTML, "div");
 
     div.style.cssText =
-      "display:block;" +
+      "display:flow-root;" +
+      "position:absolute;" +
+      "top:0;left:0;" +
       "width:" + MOBILE.textWidth + "px;" +
+      "height:max-content;" +
+      "min-height:0;" +
       "box-sizing:border-box;" +
       "margin:0;padding:0;" +
       "color:#ffffff;" +
@@ -1576,7 +1580,7 @@
       bodyDiv.appendChild(paragraph);
     });
 
-    // Référence
+    // Référence bibliographique
     const reference = makeForeignObject(
       "mobile-article-reference",
       MOBILE.titleTop
@@ -1600,15 +1604,16 @@
     scheduleArticleLayout();
   }
 
+  // Mesure la hauteur du contenu HTML, pas celle du foreignObject.
   function measureContent(element) {
     if (!element) return 0;
 
-    return Math.ceil(
-      Math.max(
-        element.scrollHeight,
-        element.getBoundingClientRect().height
-      )
-    );
+    const rect = element.getBoundingClientRect();
+
+    return Math.ceil(Math.max(
+      element.scrollHeight,
+      rect.height
+    ));
   }
 
   function resizeArticleText() {
@@ -1626,7 +1631,7 @@
 
     const titleHeight = measureContent(titleDiv);
 
-    // 2. Position du corps calculée depuis la hauteur du titre.
+    // 2. Position du corps après le titre.
     const bodyY =
       MOBILE.titleTop +
       titleHeight +
@@ -1637,7 +1642,7 @@
     // 3. Mesure du corps.
     const bodyHeight = measureContent(bodyDiv);
 
-    // 4. Position de la référence calculée depuis la hauteur du corps.
+    // 4. Position de la référence après le corps.
     const referenceY =
       bodyY +
       bodyHeight +
@@ -1652,7 +1657,7 @@
     bodyFO.setAttribute("height", String(bodyHeight + 2));
     referenceFO.setAttribute("height", String(referenceHeight + 2));
 
-    // 6. Hauteur du rectangle calculée jusqu'à la fin de la référence.
+    // 6. Hauteur du rectangle jusqu'à la fin de la référence.
     const contentBottom = referenceY + referenceHeight;
 
     const panelHeight =
@@ -1805,7 +1810,7 @@
     scheduleArticleLayout();
   }
 
-  // Bascule uniquement lors d'un véritable changement de breakpoint.
+  // Bascule uniquement lors d'un changement réel de breakpoint.
   function breakpointChanged() {
     if (mobileQuery.matches) {
       mobileLayout();
@@ -1814,7 +1819,7 @@
     }
   }
 
-  // Initialisation unique.
+  // Initialisation.
   breakpointChanged();
 
   // Changement ordinateur/mobile uniquement.
@@ -1823,13 +1828,6 @@
   } else {
     mobileQuery.addListener(breakpointChanged);
   }
-
-  // Un resize en restant mobile ne doit jamais réactiver desktopLayout().
-  window.addEventListener("resize", function () {
-    if (mobileQuery.matches) {
-      scheduleArticleLayout();
-    }
-  });
 
 })();
 ]]></script>
