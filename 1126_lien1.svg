@@ -1828,29 +1828,8 @@
     const bannerCenterY = bannerY + bannerHeight / 2;
 
     // ========================================================
-    // LOGO : À 10 PX DU BORD GAUCHE, CENTRÉ VERTICALEMENT
-    // ========================================================
-
-    if (wrappers.logo) {
-      try {
-        const logoBounds = wrappers.logo.getBBox();
-
-        const logoTargetX = bannerX + 10;
-
-        const logoTargetY =
-          bannerCenterY -
-          (logoBounds.y + logoBounds.height / 2);
-
-        move(
-          wrappers.logo,
-          logoTargetX - logoBounds.x,
-          logoTargetY,
-          1
-        );
-      } catch (error) {
-        move(wrappers.logo, 10, bannerCenterY, 1);
-      }
-    }
+    // LOGO : POSITION FIXE À GAUCHE DU BANDEAU
+    move(wrappers.logo, -18.37, -2.58, 1);
 
     // ========================================================
     // TITRE : ÉCHELLE DOUBLÉE ET CENTRAGE VERTICAL
