@@ -1576,52 +1576,58 @@
     articleReference.style.display = "none";
   }
 
-  function resizeMobileArticleText() {
+   function resizeMobileArticleText() {
     if (
       !mobileTitleContainer ||
       !mobileTextContainer ||
       !mobileReferenceContainer
     ) return;
 
-    // Mesure du titre
-    const titleHeight = mobileTitleContainer.scrollHeight;
+    // Mesure du titre après son retour à la ligne
+    const titleHeight =
+      mobileTitleContainer.getBoundingClientRect().height;
 
-    // Le texte principal commence après le titre
     const titleY = 110;
-    const gapTitleBody = 12;
+    const gapTitleBody = 18;
+
+    // Position dynamique du corps sous le titre
     const bodyY = titleY + titleHeight + gapTitleBody;
 
     mobileTextObject.setAttribute("y", String(bodyY));
 
-    // Mesure du texte principal
-    const bodyHeight = mobileTextContainer.scrollHeight;
+    // Mesure du corps après son positionnement
+    const bodyHeight =
+      mobileTextContainer.getBoundingClientRect().height;
 
-    // La référence commence après le texte principal
-    const gapBodyReference = 16;
-    const referenceY = bodyY + bodyHeight + gapBodyReference;
+    const gapBodyReference = 18;
+
+    // Position dynamique de la référence sous le corps
+    const referenceY =
+      bodyY + bodyHeight + gapBodyReference;
 
     mobileReferenceObject.setAttribute(
       "y",
       String(referenceY)
     );
 
-    // Mesure de la référence bibliographique
-    const referenceHeight = mobileReferenceContainer.scrollHeight;
+    // Mesure de la référence
+    const referenceHeight =
+      mobileReferenceContainer.getBoundingClientRect().height;
 
-    // Ajustement des hauteurs des trois zones de texte
+    // Ajustement des hauteurs des zones
     mobileTitleObject.setAttribute(
       "height",
-      String(titleHeight + 2)
+      String(Math.ceil(titleHeight) + 2)
     );
 
     mobileTextObject.setAttribute(
       "height",
-      String(bodyHeight + 2)
+      String(Math.ceil(bodyHeight) + 2)
     );
 
     mobileReferenceObject.setAttribute(
       "height",
-      String(referenceHeight + 2)
+      String(Math.ceil(referenceHeight) + 2)
     );
   }
 
