@@ -1337,6 +1337,7 @@
 (function () {
   const svg = document.documentElement;
   const NS = "http://www.w3.org/2000/svg";
+  const XHTML = "http://www.w3.org/1999/xhtml";
 
   const articles = [
     {id:"g1", x:3.078, y:90.013}
@@ -1382,12 +1383,12 @@
   wrappers.subtitle = wrap("g3", "mobile-wrapper-subtitle");
   wrappers.home = wrap("a1", "mobile-wrapper-home");
 
-  // Groupes enveloppes du rectangle
+  // Groupe enveloppe du rectangle du bandeau
   wrappers.bannerRect = wrap("rect8", "mobile-wrapper-banner-rect");
 
   const banner = document.getElementById("rect8");
 
-  // Texte mobile de l'article : un seul bloc en flux naturel
+  // Éléments de l'article
   const articleGroup = document.getElementById("g1");
   const articlePanel = document.getElementById("rect4");
   const originalTitle = document.getElementById("text39");
@@ -1402,109 +1403,260 @@
     originalReference.style.display
   ];
 
-  let mobileArticleForeignObject = null;
-  let mobileArticleContent = null;
+  let titleForeignObject = null;
+  let bodyForeignObject = null;
+  let referenceForeignObject = null;
+
+  let titleContainer = null;
+  let bodyContainer = null;
+  let referenceContainer = null;
+
+  let articleTextCreated = false;
+  let resizePending = false;
+
+  const articleTextSettings = {
+    x: 9,
+    top: 110,
+    width: 338,
+    titleBodyGap: 18,
+    bodyReferenceGap: 18,
+    bottomPadding: 24
+  };
+
+  function createTextForeignObject(id, y) {
+    const foreignObject = document.createElementNS(
+      NS,
+      "foreignObject"
+    );
+
+    foreignObject.setAttribute("id", id);
+    foreignObject.setAttribute("x", String(articleTextSettings.x));
+    foreignObject.setAttribute("y", String(y));
+    foreignObject.setAttribute("width", String(articleTextSettings.width));
+
+    // Hauteur provisoire suffisante pour mesurer le contenu.
+    foreignObject.setAttribute("height", "10000");
+
+    const container = document.createElementNS(XHTML, "div");
+
+    container.style.cssText =
+      "display:block;" +
+      "width:" + articleTextSettings.width + "px;" +
+      "box-sizing:border-box;" +
+      "margin:0;" +
+      "padding:0;" +
+      "color:#ffffff;" +
+      "overflow-wrap:break-word;" +
+      "word-wrap:break-word;";
+
+    foreignObject.appendChild(container);
+    articleGroup.appendChild(foreignObject);
+
+    return {
+      foreignObject: foreignObject,
+      container: container
+    };
+  }
 
   function createMobileArticleText() {
-    if (mobileArticleForeignObject) return;
+    if (articleTextCreated) return;
 
     const titleText = originalTitle.textContent.trim();
     const bodyText = originalBody.textContent.trim();
     const referenceText = originalReference.textContent.trim();
 
-    mobileArticleForeignObject =
-      document.createElementNS(NS, "foreignObject");
-
-    mobileArticleForeignObject.setAttribute("id", "mobile-article-text");
-    mobileArticleForeignObject.setAttribute("x", "9");
-    mobileArticleForeignObject.setAttribute("y", "110");
-    mobileArticleForeignObject.setAttribute("width", "338");
-    mobileArticleForeignObject.setAttribute("height", "10000");
-
-    mobileArticleContent = document.createElementNS(
-      "http://www.w3.org/1999/xhtml",
-      "div"
+    // Titre
+    const titleObject = createTextForeignObject(
+      "mobile-article-title",
+      articleTextSettings.top
     );
 
-    mobileArticleContent.style.cssText =
-      "width:338px;box-sizing:border-box;color:white;" +
-      "font-family:Arial,sans-serif;text-align:justify;" +
-      "overflow-wrap:break-word;";
+    titleForeignObject = titleObject.foreignObject;
+    titleContainer = titleObject.container;
 
-    const title = document.createElement("div");
-    title.textContent = titleText;
-    title.style.cssText =
+    titleContainer.textContent = titleText;
+    titleContainer.style.cssText +=
       "font-family:'Leelawadee UI',Arial,sans-serif;" +
-      "font-size:18.667px;font-weight:bold;line-height:1.25;" +
-      "text-align:justify;margin:0 0 18px 0;";
+      "font-size:18.667px;" +
+      "font-weight:bold;" +
+      "line-height:1.25;" +
+      "text-align:justify;";
 
-    const body = document.createElement("div");
-    body.style.cssText =
-      "font-family:Arial,sans-serif;font-size:13.333px;" +
-      "font-weight:normal;line-height:1.25;text-align:justify;" +
-      "margin:0 0 18px 0;";
+    // Corps du texte
+    const bodyObject = createTextForeignObject(
+      "mobile-article-body",
+      articleTextSettings.top
+    );
 
+    bodyForeignObject = bodyObject.foreignObject;
+    bodyContainer = bodyObject.container;
+
+    bodyContainer.style.cssText +=
+      "font-family:Arial,sans-serif;" +
+      "font-size:13.333px;" +
+      "font-weight:normal;" +
+      "line-height:1.25;" +
+      "text-align:justify;";
+
+    // Conserver les séparations entre paragraphes présentes dans le SVG.
     bodyText.split(/\n\s*\n/).forEach(function (paragraphText) {
+      const text = paragraphText.trim();
+      if (!text) return;
+
       const paragraph = document.createElement("p");
-      paragraph.textContent = paragraphText.trim();
-      paragraph.style.cssText = "margin:0 0 12px 0;padding:0;";
-      body.appendChild(paragraph);
+      paragraph.textContent = text;
+      paragraph.style.cssText =
+        "display:block;" +
+        "margin:0 0 12px 0;" +
+        "padding:0;";
+      bodyContainer.appendChild(paragraph);
     });
 
-    const reference = document.createElement("div");
-    reference.textContent = referenceText;
-    reference.style.cssText =
-      "font-family:Calibri,Arial,sans-serif;font-size:10.667px;" +
-      "font-style:italic;line-height:1.2;text-align:justify;" +
-      "margin:0;padding:0;";
+    // Référence bibliographique
+    const referenceObject = createTextForeignObject(
+      "mobile-article-reference",
+      articleTextSettings.top
+    );
 
-    mobileArticleContent.appendChild(title);
-    mobileArticleContent.appendChild(body);
-    mobileArticleContent.appendChild(reference);
+    referenceForeignObject = referenceObject.foreignObject;
+    referenceContainer = referenceObject.container;
 
-    mobileArticleForeignObject.appendChild(mobileArticleContent);
-    articleGroup.appendChild(mobileArticleForeignObject);
+    referenceContainer.textContent = referenceText;
+    referenceContainer.style.cssText +=
+      "font-family:Calibri,Arial,sans-serif;" +
+      "font-size:10.667px;" +
+      "font-style:italic;" +
+      "font-weight:300;" +
+      "line-height:1.2;" +
+      "text-align:justify;";
 
+    // Masquer les textes SVG d'origine en mode mobile.
     originalTitle.style.display = "none";
     originalBody.style.display = "none";
     originalReference.style.display = "none";
 
-    requestAnimationFrame(function () {
-      requestAnimationFrame(resizeMobileArticleText);
-    });
+    articleTextCreated = true;
+
+    scheduleArticleTextLayout();
+  }
+
+  function measuredHeight(container) {
+    if (!container) return 0;
+
+    return Math.max(
+      container.scrollHeight,
+      container.getBoundingClientRect().height
+    );
   }
 
   function resizeMobileArticleText() {
-    if (!mobileArticleContent || !articlePanel) return;
+    if (
+      !articleTextCreated ||
+      !titleContainer ||
+      !bodyContainer ||
+      !referenceContainer
+    ) {
+      return;
+    }
 
-    const contentHeight = mobileArticleContent.scrollHeight;
+    const settings = articleTextSettings;
 
-    mobileArticleForeignObject.setAttribute(
-      "height",
-      String(contentHeight + 2)
+    // 1. Mesurer le titre à sa largeur réelle.
+    const titleHeight = measuredHeight(titleContainer);
+
+    // 2. Placer le corps immédiatement après le titre.
+    const bodyY =
+      settings.top +
+      titleHeight +
+      settings.titleBodyGap;
+
+    bodyForeignObject.setAttribute("y", String(bodyY));
+
+    // 3. Mesurer le corps après son repositionnement.
+    const bodyHeight = measuredHeight(bodyContainer);
+
+    // 4. Placer la référence après le corps.
+    const referenceY =
+      bodyY +
+      bodyHeight +
+      settings.bodyReferenceGap;
+
+    referenceForeignObject.setAttribute(
+      "y",
+      String(referenceY)
     );
 
-    // Le panneau commence à y=100.82375 dans le repère de g1.
-    // Le texte commence à y=110 dans ce même repère.
-    const panelTop = 100.82375;
-    const textTop = 110;
-    const bottomPadding = 24;
+    // 5. Mesurer la référence à sa position définitive.
+    const referenceHeight = measuredHeight(referenceContainer);
 
-    const requiredHeight =
-      textTop + contentHeight + bottomPadding - panelTop;
+    // 6. Calculer la hauteur du panneau jusqu'à la fin de la référence.
+    const panelTop = 100.82375;
+
+    const contentBottom =
+      referenceY +
+      referenceHeight;
+
+    const requiredPanelHeight =
+      contentBottom +
+      settings.bottomPadding -
+      panelTop;
 
     articlePanel.setAttribute(
       "height",
-      String(Math.ceil(requiredHeight))
+      String(Math.ceil(requiredPanelHeight))
+    );
+
+    // Ajuster la hauteur des zones SVG à leur contenu réel.
+    titleForeignObject.setAttribute(
+      "height",
+      String(Math.ceil(titleHeight) + 2)
+    );
+
+    bodyForeignObject.setAttribute(
+      "height",
+      String(Math.ceil(bodyHeight) + 2)
+    );
+
+    referenceForeignObject.setAttribute(
+      "height",
+      String(Math.ceil(referenceHeight) + 2)
     );
   }
 
+  function scheduleArticleTextLayout() {
+    if (resizePending) return;
+
+    resizePending = true;
+
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        resizePending = false;
+        resizeMobileArticleText();
+      });
+    });
+  }
+
   function restoreMobileArticleText() {
-    if (mobileArticleForeignObject) {
-      mobileArticleForeignObject.remove();
-      mobileArticleForeignObject = null;
-      mobileArticleContent = null;
+    if (titleForeignObject) {
+      titleForeignObject.remove();
+      titleForeignObject = null;
     }
+
+    if (bodyForeignObject) {
+      bodyForeignObject.remove();
+      bodyForeignObject = null;
+    }
+
+    if (referenceForeignObject) {
+      referenceForeignObject.remove();
+      referenceForeignObject = null;
+    }
+
+    titleContainer = null;
+    bodyContainer = null;
+    referenceContainer = null;
+    articleTextCreated = false;
+    resizePending = false;
 
     originalTitle.style.display = originalTextDisplays[0];
     originalBody.style.display = originalTextDisplays[1];
@@ -1551,7 +1703,6 @@
 
       restoreRectangle(banner, originalBanner);
 
-      // Restauration du texte et du panneau de l'article
       restoreMobileArticleText();
 
       svg.removeAttribute("preserveAspectRatio");
@@ -1569,12 +1720,14 @@
 
     // Logo et textes du bandeau
     move(wrappers.logo, -18.37, -2.58, 1);
+
     move(
       wrappers.title,
       120 - 208.723 * 0.55,
       60 - 22.300 * 0.55,
       0.55
     );
+
     move(
       wrappers.subtitle,
       120 - 1010.446 * 0.65,
@@ -1619,9 +1772,9 @@
       1
     );
 
-    // Texte mobile de l'article et ajustement du rectangle
+    // Création et repositionnement dynamique des textes de l'article
     createMobileArticleText();
-    requestAnimationFrame(resizeMobileArticleText);
+    scheduleArticleTextLayout();
   }
 
   layout();
