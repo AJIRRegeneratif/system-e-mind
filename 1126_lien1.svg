@@ -1520,7 +1520,6 @@
   function createMobileArticleText() {
     if (mobileTitleObject) return;
 
-    // TITRE : POLICE DOUBLÉE
     const title = createTextObject(
       "mobile-article-title",
       110,
@@ -1537,7 +1536,6 @@
     mobileTitleObject = title.object;
     mobileTitleContainer = title.container;
 
-    // CORPS DE L'ARTICLE : POLICE DOUBLÉE
     const body = createTextObject(
       "mobile-article-text",
       160,
@@ -1569,7 +1567,6 @@
     mobileTextObject = body.object;
     mobileTextContainer = body.container;
 
-    // RÉFÉRENCE BIBLIOGRAPHIQUE : POLICE DOUBLÉE
     const reference = createTextObject(
       "mobile-article-reference",
       0,
@@ -1586,7 +1583,6 @@
     mobileReferenceObject = reference.object;
     mobileReferenceContainer = reference.container;
 
-    // COPYRIGHT : POLICE DOUBLÉE
     const copyright = createTextObject(
       "mobile-article-copyright",
       0,
@@ -1606,7 +1602,6 @@
     mobileCopyrightObject = copyright.object;
     mobileCopyrightContainer = copyright.container;
 
-    // MASQUAGE DES TEXTES SVG ORIGINAUX EN MODE MOBILE
     articleTitle.style.display = "none";
     articleText.style.display = "none";
     articleReference.style.display = "none";
@@ -1661,7 +1656,6 @@
     const gapBodyReference = 18;
     const gapReferenceCopyright = 18;
 
-    // MESURE DU TITRE
     const titleHeight =
       mobileTitleContainer.getBoundingClientRect().height;
 
@@ -1670,12 +1664,10 @@
       String(Math.ceil(titleHeight) + 2)
     );
 
-    // POSITIONNEMENT DU CORPS
     const bodyY = titleY + titleHeight + gapTitleBody;
 
     mobileTextObject.setAttribute("y", String(bodyY));
 
-    // MESURE DU CORPS
     const bodyHeight =
       mobileTextContainer.getBoundingClientRect().height;
 
@@ -1684,7 +1676,6 @@
       String(Math.ceil(bodyHeight) + 2)
     );
 
-    // POSITIONNEMENT DE LA RÉFÉRENCE
     const referenceY =
       bodyY + bodyHeight + gapBodyReference;
 
@@ -1693,7 +1684,6 @@
       String(referenceY)
     );
 
-    // MESURE DE LA RÉFÉRENCE
     const referenceHeight =
       mobileReferenceContainer.getBoundingClientRect().height;
 
@@ -1702,7 +1692,6 @@
       String(Math.ceil(referenceHeight) + 2)
     );
 
-    // POSITIONNEMENT DU COPYRIGHT SOUS LA RÉFÉRENCE
     const copyrightY =
       referenceY + referenceHeight + gapReferenceCopyright;
 
@@ -1711,7 +1700,6 @@
       String(copyrightY)
     );
 
-    // MESURE DU COPYRIGHT
     const copyrightHeight =
       mobileCopyrightContainer.getBoundingClientRect().height;
 
@@ -1720,7 +1708,6 @@
       String(Math.ceil(copyrightHeight) + 2)
     );
 
-    // HAUTEUR DU PANNEAU SELON LE CONTENU RÉEL
     const panelTop = 100.82375;
     const bottomPadding = 24;
 
@@ -1732,7 +1719,6 @@
       String(Math.ceil(totalHeight))
     );
 
-    // HAUTEUR DU DOCUMENT SVG
     const articleBottom =
       190 + 100.82375 + Math.ceil(totalHeight) + 30;
 
@@ -1819,8 +1805,8 @@
     // LOGO
     move(wrappers.logo, -18.37, -2.58, 1);
 
-    // TITRE DU BANDEAU
-    const titleScale = 0.55;
+    // TITRE DU BANDEAU : ÉCHELLE DOUBLÉE
+    const titleScale = 1.10;
     const titleTargetX = 120;
     const titleTargetY = 60;
 
@@ -1831,9 +1817,9 @@
       titleScale
     );
 
-    // SOUS-TITRE À DROITE DU TITRE
-    const subtitleScale = 0.65;
-    const subtitleGap = 10;
+    // SOUS-TITRE : ÉCHELLE DOUBLÉE ET ESPACEMENT DE 100
+    const subtitleScale = 1.30;
+    const subtitleGap = 100;
 
     if (wrappers.title && wrappers.subtitle) {
       try {
