@@ -1744,26 +1744,30 @@
     svg.style.height = "2160px";
     svg.style.display = "block";
 
-    // LOGO
+    // Logo
     move(wrappers.logo, -18.37, -2.58, 1);
 
-    // TITRE DU BANDEAU : échelle 1 et centrage horizontal.
+    // TITRE DU BANDEAU : échelle doublée
+    const titleScale = 1.10;
+
     move(
       wrappers.title,
-      width / 2 - 208.723,
-      60 - 22.300,
-      1
+      width / 2 - 208.723 * titleScale,
+      60 - 22.300 * titleScale,
+      titleScale
     );
 
-    // SOUS-TITRE DU BANDEAU : échelle 1 et centrage horizontal.
+    // SOUS-TITRE DU BANDEAU : échelle doublée
+    const subtitleScale = 1.30;
+
     move(
       wrappers.subtitle,
-      width / 2 - 1010.446,
-      105 - 25.516,
-      1
+      width / 2 - 1010.446 * subtitleScale,
+      105 - 25.516 * subtitleScale,
+      subtitleScale
     );
 
-    // RECTANGLE DU BANDEAU
+    // RECTANGLE DU BANDEAU : largeur complète disponible
     if (banner) {
       banner.setAttribute("x", "14.124");
       banner.setAttribute("y", "-173.095");
@@ -1778,7 +1782,7 @@
       1
     );
 
-    // ARTICLE
+    // ARTICLE : réglages conservés
     const articleStart = 190;
 
     articles.forEach((a, i) => {
@@ -1790,7 +1794,7 @@
       );
     });
 
-    // LIEN HOME
+    // Lien Home
     move(
       wrappers.home,
       Math.min(width - 46, 330) - 1330.750,
