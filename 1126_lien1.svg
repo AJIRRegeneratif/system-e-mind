@@ -1422,6 +1422,7 @@
 
     return svgPoint.matrixTransform(targetMatrix.inverse());
   }
+
   function getBannerTopInTitleCoordinates() {
     if (!wrappers.bannerRect || !wrappers.title) {
       throw new Error("Bandeau ou titre introuvable.");
@@ -1895,7 +1896,7 @@
       }
     }
 
-    // SOUS-TITRE
+    // SOUS-TITRE ET LIEN HOME
     const subtitleScale = 1.30;
     const subtitleGap = 100;
 
@@ -1917,6 +1918,29 @@
           subtitleTargetY - subtitleBounds.y * subtitleScale,
           subtitleScale
         );
+
+        // LIEN HOME : À DROITE DU SOUS-TITRE, CENTRÉ VERTICALEMENT
+        if (wrappers.home) {
+          const homeBounds = wrappers.home.getBBox();
+          const homeGap = 24;
+
+          const homeTargetX =
+            subtitleTargetX +
+            subtitleBounds.width * subtitleScale +
+            homeGap;
+
+          const homeTargetY =
+            subtitleTargetY +
+            (subtitleBounds.height * subtitleScale -
+              homeBounds.height) / 2;
+
+          move(
+            wrappers.home,
+            homeTargetX - homeBounds.x,
+            homeTargetY - homeBounds.y,
+            1
+          );
+        }
       } catch (error) {
         move(
           wrappers.subtitle,
@@ -1953,14 +1977,6 @@
         1
       );
     });
-
-    // LIEN HOME
-    move(
-      wrappers.home,
-      Math.min(width - 46, 330) - 1330.750,
-      2060 - 61.099,
-      1
-    );
 
     createMobileArticleText();
     setMobileTextWidth(width);
