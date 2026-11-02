@@ -1609,7 +1609,7 @@
       "font-weight:" + weight + ";" +
       "font-style:" + italic + ";" +
       "line-height:" + lineHeight + ";" +
-      "color:#ffffff;" +
+      "color:#333333;" +
       "text-align:justify;" +
       "text-align-last:start;" +
       "white-space:normal;" +
